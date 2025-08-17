@@ -1,11 +1,11 @@
 module.exports.config = {
   name: "accept",
-  version: "1.0.4",
-  role: 0,
-  credits: "BLACK (fixed by Ari)",
-  description: "Manage friend requests (confirm or delete)",
-  usage: "accept",
-  cooldowns: 3,
+  version: "1.0.0",
+  role: 2,
+  aliases: ["friend"],
+  credits: "BLACK",
+  description: "Accept or delete friend requests via Facebook ID",
+  cooldown: 0,
 };
 
 module.exports.onCall = async function ({ message, api }) {
