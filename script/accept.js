@@ -2,111 +2,16 @@ const moment = require("moment-timezone");
 
 module.exports.config = {
   name: "accept",
-  version: "1.0.4",
+  version: "1.0.2",
   role: 2,
   aliases: ["friend"],
-  credits: "BLACK (fixed by AJ)",
+  credits: "BLACK (fixed by ARI)",
   description: "Confirm or delete friend requests via Facebook ID",
   cooldown: 0,
 };
 
-module.exports.handleReply = async function ({ api, event, Reply }) {
-  const { listRequest } = Reply;
-  const { threadID, messageID, body, senderID } = event;
-
-  if (senderID !== Reply.author)
-    return api.sendMessage("❗ Ikaw lang ang pwedeng gumamit ng reply na ito.", threadID, messageID);
-
-  const args = body.trim().split(/\s+/);
-  const action = args[0]?.toLowerCase();
-
-  const baseForm = {
-    av: api.getCurrentUserID(),
-    fb_api_caller_class: "RelayModern",
-    variables: {
-      input: {
-        source: "friends_tab",
-        actor_id: api.getCurrentUserID(),
-        client_mutation_id: Math.round(Math.random() * 19).toString(),
-      },
-      scale: 3,
-      refresh_num: 0,
-    },
-  };
-
-  const success = [];
-  const failed = [];
-
-  if (action === "confirm") {
-    baseForm.fb_api_req_friendly_name = "FriendingCometFriendRequestConfirmMutation";
-    baseForm.doc_id = "1812724062444793"; 
-  } else if (action === "del") {
-    baseForm.fb_api_req_friendly_name = "FriendingCometFriendRequestDeleteMutation";
-    baseForm.doc_id = "1812723529111513"; 
-  } else {
-    return api.sendMessage(
-      '❗ Please use: <confirm | del> <order | all>',
-      threadID,
-      messageID
-    );
-  }
-
-  if (!args[1]) return api.sendMessage("❗ Wrong command. Example: confirm 1 o del all", threadID, messageID);
-
-  let targetIDs = args.slice(1);
-
-  if (args[1] === "all") {
-    targetIDs = [];
-    for (let i = 1; i <= listRequest.length; i++) targetIDs.push(i);
-  }
-
-  const newTargetIDs = [];
-  const promiseFriends = [];
-
-  for (const stt of targetIDs) {
-    const u = listRequest[parseInt(stt) - 1];
-    if (!u) {
-      failed.push(`❌ Stt ${stt} not found in the list`);
-      continue;
-    }
-
-    const tempForm = { ...baseForm };
-    tempForm.variables = JSON.stringify({
-      ...baseForm.variables,
-      input: {
-        ...baseForm.variables.input,
-        friend_requester_id: u.node.id,
-      },
-    });
-
-    newTargetIDs.push(u);
-    promiseFriends.push(api.httpPost("https://www.facebook.com/api/graphql/", tempForm));
-  }
-
-  for (let i = 0; i < newTargetIDs.length; i++) {
-    try {
-      const friendRequest = await promiseFriends[i];
-      if (JSON.parse(friendRequest).errors) {
-        failed.push(newTargetIDs[i].node.name);
-      } else {
-        success.push(newTargetIDs[i].node.name);
-      }
-    } catch (e) {
-      failed.push(newTargetIDs[i].node.name);
-    }
-  }
-
-  api.sendMessage(
-    `✅ ${action === "confirm" ? "Confirmed" : "Deleted"} ${success.length} request(s):\n${success.join("\n")}${
-      failed.length > 0 ? `\n❌ Failed: ${failed.join("\n")}` : ""
-    }`,
-    threadID,
-    messageID
-  );
-};
-
 module.exports.run = async function ({ api, event }) {
-  const { threadID, messageID, senderID } = event;
+  const { threadID, messageID } = event;
 
   const form = {
     av: api.getCurrentUserID(),
@@ -136,19 +41,82 @@ module.exports.run = async function ({ api, event }) {
         .format("DD/MM/YYYY HH:mm:ss")}\n`;
   }
 
-  return api.sendMessage(
-    `${msg}\n\nReply with: <confirm | del> <order | all> to take action`,
-    threadID,
-    (err, info) => {
-      if (!err) {
-        global.GoatBot.onReply.set(info.messageID, {
-          commandName: module.exports.config.name,
-          messageID: info.messageID,
-          author: senderID,
-          listRequest,
-        });
-      }
+  return global.Utils.handleReply({
+    api,
+    event,
+    message: `${msg}\n\nReply with: <confirm | del> <order | all> to take action`,
+    listRequest,
+    commandName: module.exports.config.name
+  });
+};
+
+global.Utils.handleReply = async function ({ api, event, message, listRequest, commandName }) {
+  const { threadID, messageID, body } = event;
+
+  if (!body) return api.sendMessage(message, threadID, messageID);
+
+  const cmd = body.trim().split(" ");
+  const action = cmd[0].toLowerCase();
+
+  const form = {
+    av: api.getCurrentUserID(),
+    fb_api_caller_class: "RelayModern",
+    variables: {
+      input: {
+        source: "friends_tab",
+        actor_id: api.getCurrentUserID(),
+        client_mutation_id: Math.round(Math.random() * 19).toString(),
+      },
+      scale: 3,
+      refresh_num: 0,
     },
+  };
+
+  const success = [];
+  const failed = [];
+
+  if (action === "confirm") {
+    form.fb_api_req_friendly_name = "FriendingCometFriendRequestConfirmMutation";
+    form.doc_id = "3147613905362928";
+  } else if (action === "del") {
+    form.fb_api_req_friendly_name = "FriendingCometFriendRequestDeleteMutation";
+    form.doc_id = "4108254489275063";
+  } else {
+    return api.sendMessage('❗ Please use: <confirm | del> <order | all>', threadID, messageID);
+  }
+
+  let targetIDs = cmd.slice(1);
+  if (cmd[1] === "all") targetIDs = listRequest.map((_, i) => i + 1);
+
+  const promiseFriends = [];
+  const newTargetIDs = [];
+
+  for (const stt of targetIDs) {
+    const u = listRequest[parseInt(stt) - 1];
+    if (!u) {
+      failed.push(`❌ Stt ${stt} not found in the list`);
+      continue;
+    }
+    form.variables.input.friend_requester_id = u.node.id;
+    form.variables = JSON.stringify(form.variables);
+    newTargetIDs.push(u);
+    promiseFriends.push(api.httpPost("https://www.facebook.com/api/graphql/", form));
+    form.variables = JSON.parse(form.variables);
+  }
+
+  for (let i = 0; i < newTargetIDs.length; i++) {
+    try {
+      const friendRequest = await promiseFriends[i];
+      if (JSON.parse(friendRequest).errors) failed.push(newTargetIDs[i].node.name);
+      else success.push(newTargetIDs[i].node.name);
+    } catch (e) {
+      failed.push(newTargetIDs[i].node.name);
+    }
+  }
+
+  api.sendMessage(
+    `✅ Successfully ${action === "confirm" ? "confirmed" : "deleted"} ${success.length} request(s):\n${success.join("\n")}${failed.length > 0 ? `\n❌ Failed: ${failed.join("\n")}` : ""}`,
+    threadID,
     messageID
   );
 };
