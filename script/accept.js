@@ -1,18 +1,66 @@
-const moment = require("moment-timezone");
+import moment from "moment-timezone";
 
-module.exports.config = {
+export const config = {
   name: "accept",
-  version: "1.0.0",
-  role: 2,
-  aliases: ["friend"],
-  credits: "BLACK",
-  description: "Accept or delete friend requests via Facebook ID",
-  cooldown: 0,
+  version: "1.0.1",
+  credits: "BLACK (convert by ARI)",
+  description: "Manage friend requests (confirm or delete)",
+  usages: "accept",
+  cooldowns: 3
 };
 
-module.exports.handleReply = async function ({ api, event, args, Reply }) {
+export async function onCall({ message, api }) {
+  const form = {
+    av: api.getCurrentUserID(),
+    fb_api_req_friendly_name:
+      "FriendingCometFriendRequestsRootQueryRelayPreloader",
+    fb_api_caller_class: "RelayModern",
+    doc_id: "4499164963466303",
+    variables: JSON.stringify({ input: { scale: 3 } }),
+  };
+
+  const listRequest = JSON.parse(
+    await api.httpPost("https://www.facebook.com/api/graphql/", form)
+  ).data.viewer.friending_possibilities.edges;
+
+  if (listRequest.length === 0)
+    return message.reply("✅ No pending friend requests.");
+
+  let msg = "📥 Friend Requests:\n";
+  let i = 0;
+  for (const user of listRequest) {
+    i++;
+    msg +=
+      `\n${i}. 👤 Name: ${user.node.name}` +
+      `\n🆔 ID: ${user.node.id}` +
+      `\n🔗 Url: ${user.node.url.replace("www.facebook", "fb")}` +
+      `\n⏰ Time: ${moment(user.time * 1000) 
+        .tz("Asia/Manila")
+        .format("DD/MM/YYYY HH:mm:ss")}\n`;
+  }
+
+  const info = await message.reply(
+    `${msg}\n\n📌 Reply this message with:\n- confirm <number | all>\n- del <number | all>`
+  );
+
+  global.GoatBot.onReply.set(info.messageID, {
+    commandName: config.name,
+    messageID: info.messageID,
+    author: message.senderID,
+    listRequest
+  });
+}
+
+export async function handleReply({ event, api, Reply, message }) {
+  if (event.senderID !== Reply.author) return;
+
+  const { body } = event;
   const { listRequest } = Reply;
-  const { threadID, messageID, body } = event;
+
+  const args = body.trim().toLowerCase().split(/\s+/);
+
+  const action = args[0]; // confirm or del
+  let targetIDs = args.slice(1);
 
   const form = {
     av: api.getCurrentUserID(),
@@ -28,49 +76,46 @@ module.exports.handleReply = async function ({ api, event, args, Reply }) {
     },
   };
 
-  const success = [];
-  const failed = [];
-
-  const cmd = body.trim().split(" ");
-  if (cmd[0] === "add") {
-    form.fb_api_req_friendly_name = "FriendingCometFriendRequestConfirmMutation";
+  if (action === "confirm") {
+    form.fb_api_req_friendly_name =
+      "FriendingCometFriendRequestConfirmMutation";
     form.doc_id = "3147613905362928";
-  } else if (cmd[0] === "del") {
-    form.fb_api_req_friendly_name = "FriendingCometFriendRequestDeleteMutation";
+  } else if (action === "del") {
+    form.fb_api_req_friendly_name =
+      "FriendingCometFriendRequestDeleteMutation";
     form.doc_id = "4108254489275063";
   } else {
-    return api.sendMessage(
-      'Please use: <add | del> <order | all>',
-      threadID,
-      messageID
-    );
+    return message.reply('❌ Invalid action. Use "confirm" or "del".');
   }
 
-  let targetIDs = cmd.slice(1);
-
-  if (cmd[1] === "all") {
+  if (args[1] === "all") {
     targetIDs = [];
     const lengthList = listRequest.length;
     for (let i = 1; i <= lengthList; i++) targetIDs.push(i);
   }
 
+  const success = [];
+  const failed = [];
   const newTargetIDs = [];
   const promiseFriends = [];
 
   for (const stt of targetIDs) {
     const u = listRequest[parseInt(stt) - 1];
     if (!u) {
-      failed.push(`Stt ${stt} not found in the list`);
+      failed.push(`❌ Stt ${stt} not found`);
       continue;
     }
     form.variables.input.friend_requester_id = u.node.id;
     form.variables = JSON.stringify(form.variables);
     newTargetIDs.push(u);
-    promiseFriends.push(api.httpPost("https://www.facebook.com/api/graphql/", form));
+    promiseFriends.push(
+      api.httpPost("https://www.facebook.com/api/graphql/", form)
+    );
     form.variables = JSON.parse(form.variables);
   }
 
-  for (let i = 0; i < newTargetIDs.length; i++) {
+  const lengthTarget = newTargetIDs.length;
+  for (let i = 0; i < lengthTarget; i++) {
     try {
       const friendRequest = await promiseFriends[i];
       if (JSON.parse(friendRequest).errors)
@@ -81,57 +126,13 @@ module.exports.handleReply = async function ({ api, event, args, Reply }) {
     }
   }
 
-  api.sendMessage(
-    `» Successfully ${cmd[0] == "add" ? "accepted" : "deleted"} ${success.length} request(s):\n${success.join("\n")}${failed.length > 0
-      ? `\n» Failed: ${failed.join("\n")}`
-      : ""
-    }`,
-    threadID,
-    messageID
+  message.reply(
+    `✅ Action: ${action}\n\n` +
+      (success.length > 0
+        ? `🎉 Success (${success.length}):\n${success.join("\n")}\n`
+        : "") +
+      (failed.length > 0
+        ? `⚠️ Failed (${failed.length}):\n${failed.join("\n")}`
+        : "")
   );
-};
-
-module.exports.run = async function ({ api, event }) {
-  const { threadID, messageID } = event;
-
-  const form = {
-    av: api.getCurrentUserID(),
-    fb_api_req_friendly_name: "FriendingCometFriendRequestsRootQueryRelayPreloader",
-    fb_api_caller_class: "RelayModern",
-    doc_id: "4499164963466303",
-    variables: JSON.stringify({ input: { scale: 3 } }),
-  };
-
-  const listRequest = JSON.parse(
-    await api.httpPost("https://www.facebook.com/api/graphql/", form)
-  ).data.viewer.friending_possibilities.edges;
-
-  let msg = "";
-  let i = 0;
-  for (const user of listRequest) {
-    i++;
-    msg +=
-      `\n${i}. 𝐍𝐚𝐦𝐞: ${user.node.name}` +
-      `\n𝐈𝐃: ${user.node.id}` +
-      `\n𝐔𝐫𝐥: ${user.node.url.replace("www.facebook", "fb")}` +
-      `\n𝐓𝐢𝐦𝐞: ${moment(user.time * 1009)
-        .tz("Asia/Manila")
-        .format("DD/MM/YYYY HH:mm:ss")}\n`;
-  }
-
-  return api.sendMessage(
-    `${msg}\nReply with: <add | del> <order | all> to take action`,
-    threadID,
-    (err, info) => {
-      if (!err) {
-        global.GoatBot.onReply.set(info.messageID, {
-          commandName: module.exports.config.name,
-          messageID: info.messageID,
-          author: event.senderID,
-          listRequest
-        });
-      }
-    },
-    messageID
-  );
-};
+}
