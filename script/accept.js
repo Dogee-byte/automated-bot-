@@ -2,7 +2,7 @@ const moment = require("moment-timezone");
 
 module.exports.config = {
   name: "accept",
-  version: "1.0.2",
+  version: "1.0.3",
   role: 2,
   aliases: ["friend"],
   credits: "BLACK (fixed by AJ)",
@@ -20,7 +20,7 @@ module.exports.handleReply = async function ({ api, event, Reply }) {
   const args = body.trim().split(/\s+/);
   const action = args[0]?.toLowerCase();
 
-  const form = {
+  const baseForm = {
     av: api.getCurrentUserID(),
     fb_api_caller_class: "RelayModern",
     variables: {
@@ -38,11 +38,11 @@ module.exports.handleReply = async function ({ api, event, Reply }) {
   const failed = [];
 
   if (action === "confirm") {
-    form.fb_api_req_friendly_name = "FriendingCometFriendRequestConfirmMutation";
-    form.doc_id = "3147613905362928";
+    baseForm.fb_api_req_friendly_name = "FriendingCometFriendRequestConfirmMutation";
+    baseForm.doc_id = "3147613905362928";
   } else if (action === "del") {
-    form.fb_api_req_friendly_name = "FriendingCometFriendRequestDeleteMutation";
-    form.doc_id = "4108254489275063";
+    baseForm.fb_api_req_friendly_name = "FriendingCometFriendRequestDeleteMutation";
+    baseForm.doc_id = "4108254489275063";
   } else {
     return api.sendMessage(
       '❗ Please use: <confirm | del> <order | all>',
@@ -69,11 +69,19 @@ module.exports.handleReply = async function ({ api, event, Reply }) {
       failed.push(`❌ Stt ${stt} not found in the list`);
       continue;
     }
-    form.variables.input.friend_requester_id = u.node.id;
-    form.variables = JSON.stringify(form.variables);
+
+    // Clone baseForm para hindi magulo
+    const tempForm = { ...baseForm };
+    tempForm.variables = JSON.stringify({
+      ...baseForm.variables,
+      input: {
+        ...baseForm.variables.input,
+        friend_requester_id: u.node.id,
+      },
+    });
+
     newTargetIDs.push(u);
-    promiseFriends.push(api.httpPost("https://www.facebook.com/api/graphql/", form));
-    form.variables = JSON.parse(form.variables);
+    promiseFriends.push(api.httpPost("https://www.facebook.com/api/graphql/", tempForm));
   }
 
   for (let i = 0; i < newTargetIDs.length; i++) {
@@ -90,9 +98,8 @@ module.exports.handleReply = async function ({ api, event, Reply }) {
   }
 
   api.sendMessage(
-    `✅ ${action === "confirm" ? "Confirmed" : "Deleted"} ${success.length} request(s):\n${success.join("\n")}${failed.length > 0
-      ? `\n❌ Failed: ${failed.join("\n")}`
-      : ""
+    `✅ ${action === "confirm" ? "Confirmed" : "Deleted"} ${success.length} request(s):\n${success.join("\n")}${
+      failed.length > 0 ? `\n❌ Failed: ${failed.join("\n")}` : ""
     }`,
     threadID,
     messageID
@@ -139,7 +146,7 @@ module.exports.run = async function ({ api, event }) {
           commandName: module.exports.config.name,
           messageID: info.messageID,
           author: senderID,
-          listRequest
+          listRequest,
         });
       }
     },
