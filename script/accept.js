@@ -2,11 +2,12 @@ const moment = require("moment-timezone");
 
 module.exports.config = {
   name: "accept",
-  version: "1.0.0",
-  credits: "BLACK (convert by Ari)",
-  permissions: [2],
+  version: "1.0.1",
   description: "Accept or Delete friend requests via command",
   cooldowns: 5,
+  permissions: [0], 
+  credits: "BLACK (Fixed by ARI)",
+  usages: "/accept",
 };
 
 module.exports.onCall = async function ({ api, event }) {
@@ -20,11 +21,12 @@ module.exports.onCall = async function ({ api, event }) {
   };
 
   try {
-    const res = await api.httpPost(
+    const dataRes = await api.httpPost(
       "https://www.facebook.com/api/graphql/",
       form
     );
-    const listRequest = JSON.parse(res).data.viewer.friending_possibilities.edges;
+    const listRequest = JSON.parse(dataRes).data.viewer
+      .friending_possibilities.edges;
 
     if (!listRequest || listRequest.length === 0) {
       return api.sendMessage(
@@ -47,12 +49,12 @@ module.exports.onCall = async function ({ api, event }) {
     }
 
     api.sendMessage(
-      msg + `\n\nReply:\nadd <number|all> or del <number|all>`,
+      msg + `\n\nReply:\nadd <number|all>  OR  del <number|all>`,
       event.threadID,
       (err, info) => {
         if (err) return;
         global.client.handleReply.push({
-          name: this.config.name,
+          name: module.exports.config.name, 
           messageID: info.messageID,
           listRequest,
           author: event.senderID,
@@ -61,8 +63,8 @@ module.exports.onCall = async function ({ api, event }) {
       }
     );
   } catch (err) {
-    api.sendMessage(
-      `Error: ${err}`,
+    return api.sendMessage(
+      `Error fetching requests:\n${err}`,
       event.threadID,
       event.messageID
     );
@@ -71,7 +73,7 @@ module.exports.onCall = async function ({ api, event }) {
 
 module.exports.handleReply = async function ({ api, event, handleReply }) {
   const { body, messageID, senderID, threadID } = event;
-  const { listRequest, author, type } = handleReply;
+  const { author, listRequest, type } = handleReply;
 
   if (senderID !== author || type !== "acceptFriend") return;
 
@@ -80,12 +82,13 @@ module.exports.handleReply = async function ({ api, event, handleReply }) {
 
   if (!["add", "del"].includes(action)) {
     return api.sendMessage(
-      `❌ Wrong format!\nUse: add <number | all> or del <number | all>`,
+      `⚠️ Wrong format!\nUse: add <number|all>  or  del <number|all>`,
       threadID,
       messageID
     );
   }
 
+  // Build form
   const form = {
     av: api.getCurrentUserID(),
     fb_api_caller_class: "RelayModern",
@@ -110,13 +113,14 @@ module.exports.handleReply = async function ({ api, event, handleReply }) {
     form.doc_id = "4108254489275063";
   }
 
+  // Target indexes
   let targets = args.slice(1);
   if (targets[0] === "all") {
     targets = listRequest.map((_, index) => index + 1);
   }
 
-  const success = [];
-  const failed = [];
+  const success = [],
+    failed = [];
 
   for (const stt of targets) {
     const user = listRequest[parseInt(stt) - 1];
@@ -144,7 +148,7 @@ module.exports.handleReply = async function ({ api, event, handleReply }) {
 
   return api.sendMessage(
     `✅ ${action === "add" ? "Accepted" : "Deleted"} ${success.length
-    } friend request(s):\n${success.join(
+    } request(s):\n${success.join(
       "\n"
     )}\n\n❌ Failed (${failed.length}): ${failed.join("\n")}`,
     threadID,
