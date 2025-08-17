@@ -3,10 +3,10 @@ import moment from "moment-timezone";
 export const config = {
   name: "accept",
   version: "1.0.1",
-  credits: "BLACK (convert by ARI)",
+  role: 0, 
+  credits: "BLACK (convert by ari)",
   description: "Manage friend requests (confirm or delete)",
-  usages: "accept",
-  cooldowns: 3
+  cooldowns: 3,
 };
 
 export async function onCall({ message, api }) {
