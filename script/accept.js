@@ -1,103 +1,96 @@
 import moment from "moment-timezone";
 
-const config = {
+export const config = {
   name: "accept",
   version: "1.0.0",
-  credits: "BLACK",
+  credits: "BLACK (convert by ari)",
   permissions: [2],
-  description: "Make friends via Facebook ID",
-  usages: "uid",
-  isAbsolute: true,
-  cooldowns: 0,
+  description: "Accept / Delete friend requests via Facebook ID",
+  usages: "accept",
+  cooldowns: 5,
 };
 
-async function handleReply({ eventData, message }) {
-  const { body } = message;
-  const { listRequest } = eventData;
+async function onReply({ event, api, Reply, args, data }) {
+  const { body, messageID } = event;
+  const listRequest = data.listRequest;
 
-  const args = body.replace(/ +/g, " ").toLowerCase().split(" ");
+  const cmd = body.trim().toLowerCase().split(" ");
+  if (!["add", "del"].includes(cmd[0]))
+    return api.sendMessage(
+      `❌ Wrong format!\nUse: add <number | all> or del <number | all>`,
+      event.threadID,
+      event.messageID
+    );
 
   const form = {
-    av: global.api.getCurrentUserID(),
+    av: api.getCurrentUserID(),
     fb_api_caller_class: "RelayModern",
     variables: {
       input: {
         source: "friends_tab",
-        actor_id: global.api.getCurrentUserID(),
-        client_mutation_id: Math.round(Math.random() * 19).toString(),
+        actor_id: api.getCurrentUserID(),
+        client_mutation_id: Math.round(Math.random() * 19) + "",
       },
       scale: 3,
       refresh_num: 0,
     },
   };
 
-  const success = [];
-  const failed = [];
-
-  if (args[0] == "add") {
+  if (cmd[0] === "add") {
     form.fb_api_req_friendly_name =
       "FriendingCometFriendRequestConfirmMutation";
     form.doc_id = "3147613905362928";
-  } else if (args[0] == "del") {
+  } else {
     form.fb_api_req_friendly_name =
       "FriendingCometFriendRequestDeleteMutation";
     form.doc_id = "4108254489275063";
-  } else
-    return message.reply(
-      'Please select <add | del > <end | order or "all">'
-    );
-
-  let targetIDs = args.slice(1);
-
-  if (args[1] == "all") {
-    targetIDs = [];
-    const lengthList = listRequest.length;
-    for (let i = 1; i <= lengthList; i++) targetIDs.push(i);
   }
 
-  const newTargetIDs = [];
-  const promiseFriends = [];
+  let targets = cmd.slice(1);
+  if (targets[0] === "all") {
+    targets = listRequest.map((_, idx) => idx + 1);
+  }
 
-  for (const stt of targetIDs) {
-    const u = listRequest[parseInt(stt) - 1];
-    if (!u) {
-      failed.push(`Stt ${stt} was not found in the list`);
+  const success = [],
+    failed = [];
+
+  for (const stt of targets) {
+    const user = listRequest[parseInt(stt) - 1];
+    if (!user) {
+      failed.push(`ID ${stt} not found`);
       continue;
     }
-    form.variables.input.friend_requester_id = u.node.id;
+    form.variables.input.friend_requester_id = user.node.id;
     form.variables = JSON.stringify(form.variables);
-    newTargetIDs.push(u);
-    promiseFriends.push(
-      global.api.httpPost("https://www.facebook.com/api/graphql/", form)
-    );
+    try {
+      const res = await api.httpPost(
+        "https://www.facebook.com/api/graphql/",
+        form
+      );
+      const json = JSON.parse(res);
+      if (json.errors) failed.push(user.node.name);
+      else success.push(user.node.name);
+    } catch (e) {
+      failed.push(user.node.name);
+    }
     form.variables = JSON.parse(form.variables);
   }
 
-  const lengthTarget = newTargetIDs.length;
-  for (let i = 0; i < lengthTarget; i++) {
-    try {
-      const friendRequest = await promiseFriends[i];
-      if (JSON.parse(friendRequest).errors)
-        failed.push(newTargetIDs[i].node.name);
-      else success.push(newTargetIDs[i].node.name);
-    } catch (e) {
-      failed.push(newTargetIDs[i].node.name);
-    }
-  }
-
-  message.reply(
-    `» Already ${args[0] == "add" ? "accepted" : "delete"
-    } successfully the friend request of ${success.length
-    } person:\n${success.join("\n")}${failed.length > 0
-      ? `\n» Failed with ${failed.length} person: ${failed.join("\n")}`
-      : ""
-    }`
+  api.sendMessage(
+    `✅ ${cmd[0] == "add" ? "Accepted" : "Deleted"} ${
+      success.length
+    } friend request(s):\n${success.join(
+      "\n"
+    )}\n\n❌ Failed (${failed.length}): ${failed.join("\n")}`,
+    event.threadID,
+    messageID
   );
 }
 
-async function onCall({ message }) {
+// === Command Call === //
+export async function onCall({ message, api, event, args }) {
   const form = {
-    av: global.api.getCurrentUserID(),
+    av: api.getCurrentUserID(),
     fb_api_req_friendly_name:
       "FriendingCometFriendRequestsRootQueryRelayPreloader",
     fb_api_caller_class: "RelayModern",
@@ -105,33 +98,53 @@ async function onCall({ message }) {
     variables: JSON.stringify({ input: { scale: 3 } }),
   };
 
-  const listRequest = JSON.parse(
-    await global.api.httpPost("https://www.facebook.com/api/graphql/", form)
-  ).data.viewer.friending_possibilities.edges;
-
-  let msg = "";
-  let i = 0;
-  for (const user of listRequest) {
-    i++;
-    msg +=
-      `\n${i}. 𝐍𝐚𝐦𝐞: ${user.node.name}` +
-      `\n𝐈𝐃: ${user.node.id}` +
-      `\n𝐔𝐫𝐥: ${user.node.url.replace("www.facebook", "fb")}` +
-      `\n𝐓𝐢𝐦𝐞: ${moment(user.time * 1009)
-        .tz("Asia/Manila")
-        .format("DD/MM/YYYY HH:mm:ss")}\n`;
-  }
-
-  message
-    .reply(
-      `${msg}\nReply this message reads: <add | del> <the order of | or \"all\"> to take action`
-    )
-    .then((d) =>
-      d.addReplyEvent({
-        callback: handleReply,
-        listRequest,
-      })
+  try {
+    const dataRes = await api.httpPost(
+      "https://www.facebook.com/api/graphql/",
+      form
     );
+    const listRequest = JSON.parse(dataRes).data.viewer.friending_possibilities
+      .edges;
+
+    if (!listRequest || listRequest.length == 0)
+      return api.sendMessage(
+        "No pending friend requests.",
+        event.threadID,
+        event.messageID
+      );
+
+    let msg = "=== Pending Friend Requests ===";
+    let count = 0;
+    for (const user of listRequest) {
+      count++;
+      msg += `\n\n${count}. Name: ${user.node.name}\nID: ${user.node.id}\nURL: ${user.node.url.replace(
+        "www.facebook",
+        "fb"
+      )}\nTime: ${moment(user.time * 1000)
+        .tz("Asia/Manila")
+        .format("DD/MM/YYYY HH:mm:ss")}`;
+    }
+
+    api.sendMessage(
+      msg + `\n\nReply:\nadd <number|all> or del <number|all>`,
+      event.threadID,
+      (err, info) => {
+        global.client.handleReply.push({
+          name: config.name,
+          messageID: info.messageID,
+          listRequest,
+          author: event.senderID,
+          type: "acceptFriend",
+        });
+      }
+    );
+  } catch (e) {
+    api.sendMessage(`${e}`, event.threadID, event.messageID);
+  }
 }
 
-export { onCall, config };
+// Register reply handler
+export const handleReply = async function (o) {
+  if (o.type !== "acceptFriend") return;
+  await onReply(o);
+};
