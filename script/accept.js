@@ -1,11 +1,12 @@
 import moment from "moment-timezone";
 
-export const config = {
+module.exports.config = {
   name: "accept",
   version: "1.0.1",
   role: 0, 
   credits: "BLACK (convert by ari)",
   description: "Manage friend requests (confirm or delete)",
+  usage: "accept",
   cooldowns: 3,
 };
 
