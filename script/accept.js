@@ -1,66 +1,78 @@
-const moment = require("moment-timezone");
-
-export const config = {
+module.exports.config = {
   name: "accept",
-  version: "1.0.1",
+  version: "1.0.4",
   role: 0,
-  credits: "BLACK (fixed by GPT)",
+  credits: "BLACK (fixed by Ari)",
   description: "Manage friend requests (confirm or delete)",
-  usage: "{pn}",
-  cooldowns: 3
+  usage: "accept",
+  cooldowns: 3,
 };
 
-export async function onCall({ message, api }) {
-  const form = {
-    av: api.getCurrentUserID(),
-    fb_api_req_friendly_name:
-      "FriendingCometFriendRequestsRootQueryRelayPreloader",
-    fb_api_caller_class: "RelayModern",
-    doc_id: "4499164963466303",
-    variables: JSON.stringify({ input: { scale: 3 } }),
-  };
+module.exports.onCall = async function ({ message, api }) {
+  try {
+    const form = {
+      av: api.getCurrentUserID(),
+      fb_api_req_friendly_name:
+        "FriendingCometFriendRequestsRootQueryRelayPreloader",
+      fb_api_caller_class: "RelayModern",
+      doc_id: "4499164963466303",
+      variables: JSON.stringify({ input: { scale: 3 } }),
+    };
 
-  const res = await api.httpPost("https://www.facebook.com/api/graphql/", form);
-  const listRequest = JSON.parse(res).data.viewer.friending_possibilities.edges;
+    const raw = await api.httpPost("https://www.facebook.com/api/graphql/", form);
+    let res;
+    try {
+      res = JSON.parse(raw);
+    } catch (err) {
+      console.error("❌ JSON parse error:", raw);
+      return message.reply("❌ Failed to parse response from Facebook.");
+    }
 
-  if (listRequest.length === 0)
-    return message.reply("✅ No pending friend requests.");
+    const listRequest = res?.data?.viewer?.friending_possibilities?.edges || [];
+    if (listRequest.length === 0)
+      return message.reply("✅ No pending friend requests.");
 
-  let msg = "📥 Friend Requests:\n";
-  let i = 0;
-  for (const user of listRequest) {
-    i++;
-    msg +=
-      `\n${i}. 👤 Name: ${user.node.name}` +
-      `\n🆔 ID: ${user.node.id}` +
-      `\n🔗 Url: ${user.node.url.replace("www.facebook", "fb")}` +
-      `\n⏰ Time: ${moment(user.time * 1000) 
-        .tz("Asia/Manila")
-        .format("DD/MM/YYYY HH:mm:ss")}\n`;
+    let msg = "📥 Friend Requests:\n";
+    listRequest.forEach((user, i) => {
+      const date = new Date(user.time * 1000).toLocaleString("en-PH", {
+        timeZone: "Asia/Manila",
+      });
+      msg +=
+        `\n${i + 1}. 👤 Name: ${user.node.name}` +
+        `\n🆔 ID: ${user.node.id}` +
+        `\n🔗 Url: ${user.node.url.replace("www.facebook", "fb")}` +
+        `\n⏰ Time: ${date}\n`;
+    });
+
+    const info = await message.reply(
+      `${msg}\n\n📌 Reply with:\n- confirm <number | all>\n- del <number | all>`
+    );
+
+    global.GoatBot.onReply.set(info.messageID, {
+      commandName: module.exports.config.name,
+      messageID: info.messageID,
+      author: message.senderID,
+      listRequest,
+    });
+  } catch (err) {
+    console.error("❌ onCall error:", err);
+    return message.reply("⚠️ Something went wrong.");
   }
+};
 
-  const info = await message.reply(
-    `${msg}\n\n📌 Reply this message with:\n- confirm <number | all>\n- del <number | all>`
-  );
-
-  global.GoatBot.onReply.set(info.messageID, {
-    commandName: config.name,
-    messageID: info.messageID,
-    author: message.senderID,
-    listRequest
-  });
-}
-
-export async function handleReply({ event, api, Reply, message }) {
+module.exports.handleReply = async function ({ event, api, Reply, message }) {
   if (event.senderID !== Reply.author) return;
 
   const { body } = event;
   const { listRequest } = Reply;
 
   const args = body.trim().toLowerCase().split(/\s+/);
-
   const action = args[0]; // confirm or del
   let targetIDs = args.slice(1);
+
+  if (!["confirm", "del"].includes(action)) {
+    return message.reply('❌ Invalid action. Use "confirm" or "del".');
+  }
 
   const form = {
     av: api.getCurrentUserID(),
@@ -82,20 +94,15 @@ export async function handleReply({ event, api, Reply, message }) {
   } else if (action === "del") {
     form.fb_api_req_friendly_name = "FriendingCometFriendRequestDeleteMutation";
     form.doc_id = "4108254489275063";
-  } else {
-    return message.reply('❌ Invalid action. Use "confirm" or "del".');
   }
 
   if (args[1] === "all") {
     targetIDs = [];
-    const lengthList = listRequest.length;
-    for (let i = 1; i <= lengthList; i++) targetIDs.push(i);
+    for (let i = 1; i <= listRequest.length; i++) targetIDs.push(i);
   }
 
   const success = [];
   const failed = [];
-  const newTargetIDs = [];
-  const promiseFriends = [];
 
   for (const stt of targetIDs) {
     const u = listRequest[parseInt(stt) - 1];
@@ -103,24 +110,23 @@ export async function handleReply({ event, api, Reply, message }) {
       failed.push(`❌ Stt ${stt} not found`);
       continue;
     }
-    form.variables.input.friend_requester_id = u.node.id;
-    form.variables = JSON.stringify(form.variables);
-    newTargetIDs.push(u);
-    promiseFriends.push(
-      api.httpPost("https://www.facebook.com/api/graphql/", form)
-    );
-    form.variables = JSON.parse(form.variables);
-  }
 
-  const lengthTarget = newTargetIDs.length;
-  for (let i = 0; i < lengthTarget; i++) {
+    form.variables.input.friend_requester_id = u.node.id;
+    const sendForm = { ...form, variables: JSON.stringify(form.variables) };
+
     try {
-      const friendRequest = await promiseFriends[i];
-      if (JSON.parse(friendRequest).errors)
-        failed.push(newTargetIDs[i].node.name);
-      else success.push(newTargetIDs[i].node.name);
+      const raw = await api.httpPost("https://www.facebook.com/api/graphql/", sendForm);
+      const res = JSON.parse(raw);
+
+      if (res?.errors) {
+        console.error("❌ GraphQL error:", res.errors);
+        failed.push(u.node.name);
+      } else {
+        success.push(u.node.name);
+      }
     } catch (e) {
-      failed.push(newTargetIDs[i].node.name);
+      console.error("❌ Request error:", e);
+      failed.push(u.node.name);
     }
   }
 
@@ -133,4 +139,4 @@ export async function handleReply({ event, api, Reply, message }) {
         ? `⚠️ Failed (${failed.length}):\n${failed.join("\n")}`
         : "")
   );
-}
+};
