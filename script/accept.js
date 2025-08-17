@@ -2,7 +2,7 @@ const moment = require("moment-timezone");
 
 module.exports.config = {
   name: "accept",
-  version: "1.0.3",
+  version: "1.0.4",
   role: 2,
   aliases: ["friend"],
   credits: "BLACK (fixed by AJ)",
@@ -39,10 +39,10 @@ module.exports.handleReply = async function ({ api, event, Reply }) {
 
   if (action === "confirm") {
     baseForm.fb_api_req_friendly_name = "FriendingCometFriendRequestConfirmMutation";
-    baseForm.doc_id = "3147613905362928";
+    baseForm.doc_id = "1812724062444793"; 
   } else if (action === "del") {
     baseForm.fb_api_req_friendly_name = "FriendingCometFriendRequestDeleteMutation";
-    baseForm.doc_id = "4108254489275063";
+    baseForm.doc_id = "1812723529111513"; 
   } else {
     return api.sendMessage(
       '❗ Please use: <confirm | del> <order | all>',
@@ -70,7 +70,6 @@ module.exports.handleReply = async function ({ api, event, Reply }) {
       continue;
     }
 
-    // Clone baseForm para hindi magulo
     const tempForm = { ...baseForm };
     tempForm.variables = JSON.stringify({
       ...baseForm.variables,
