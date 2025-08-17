@@ -1,13 +1,13 @@
-import moment from "moment-timezone";
+const moment = require("moment-timezone");
 
-module.exports.config = {
+export const config = {
   name: "accept",
   version: "1.0.1",
-  role: 0, 
-  credits: "BLACK (convert by ari)",
+  role: 0,
+  credits: "BLACK (fixed by GPT)",
   description: "Manage friend requests (confirm or delete)",
-  usage: "accept",
-  cooldowns: 3,
+  usage: "{pn}",
+  cooldowns: 3
 };
 
 export async function onCall({ message, api }) {
@@ -20,9 +20,8 @@ export async function onCall({ message, api }) {
     variables: JSON.stringify({ input: { scale: 3 } }),
   };
 
-  const listRequest = JSON.parse(
-    await api.httpPost("https://www.facebook.com/api/graphql/", form)
-  ).data.viewer.friending_possibilities.edges;
+  const res = await api.httpPost("https://www.facebook.com/api/graphql/", form);
+  const listRequest = JSON.parse(res).data.viewer.friending_possibilities.edges;
 
   if (listRequest.length === 0)
     return message.reply("✅ No pending friend requests.");
@@ -78,12 +77,10 @@ export async function handleReply({ event, api, Reply, message }) {
   };
 
   if (action === "confirm") {
-    form.fb_api_req_friendly_name =
-      "FriendingCometFriendRequestConfirmMutation";
+    form.fb_api_req_friendly_name = "FriendingCometFriendRequestConfirmMutation";
     form.doc_id = "3147613905362928";
   } else if (action === "del") {
-    form.fb_api_req_friendly_name =
-      "FriendingCometFriendRequestDeleteMutation";
+    form.fb_api_req_friendly_name = "FriendingCometFriendRequestDeleteMutation";
     form.doc_id = "4108254489275063";
   } else {
     return message.reply('❌ Invalid action. Use "confirm" or "del".');
