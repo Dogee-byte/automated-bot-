@@ -1,59 +1,11 @@
 const moment = require("moment-timezone");
 
-module.exports.config = {
-  name: "accept",
-  version: "1.0.2",
-  role: 2,
-  aliases: ["friend"],
-  credits: "BLACK (fixed by ARI)",
-  description: "Confirm or delete friend requests via Facebook ID",
-  cooldown: 0,
-};
+if (!global.Utils) global.Utils = {};
 
-module.exports.run = async function ({ api, event }) {
-  const { threadID, messageID } = event;
-
-  const form = {
-    av: api.getCurrentUserID(),
-    fb_api_req_friendly_name: "FriendingCometFriendRequestsRootQueryRelayPreloader",
-    fb_api_caller_class: "RelayModern",
-    doc_id: "4499164963466303",
-    variables: JSON.stringify({ input: { scale: 3 } }),
-  };
-
-  const res = await api.httpPost("https://www.facebook.com/api/graphql/", form);
-  const listRequest = JSON.parse(res).data.viewer.friending_possibilities.edges;
-
-  if (!listRequest || listRequest.length === 0) {
-    return api.sendMessage("✨ No pending friend requests.", threadID, messageID);
-  }
-
-  let msg = "";
-  let i = 0;
-  for (const user of listRequest) {
-    i++;
-    msg +=
-      `\n${i}. 𝐍𝐚𝐦𝐞: ${user.node.name}` +
-      `\n𝐈𝐃: ${user.node.id}` +
-      `\n𝐔𝐫𝐥: ${user.node.url.replace("www.facebook", "fb")}` +
-      `\n𝐓𝐢𝐦𝐞: ${moment(user.time * 1000)
-        .tz("Asia/Manila")
-        .format("DD/MM/YYYY HH:mm:ss")}\n`;
-  }
-
-  return global.Utils.handleReply({
-    api,
-    event,
-    message: `${msg}\n\nReply with: <confirm | del> <order | all> to take action`,
-    listRequest,
-    commandName: module.exports.config.name
-  });
-};
-
-global.Utils.handleReply = async function ({ api, event, message, listRequest, commandName }) {
+global.Utils.handleReply = async function ({ api, event, listRequest }) {
   const { threadID, messageID, body } = event;
 
-  if (!body) return api.sendMessage(message, threadID, messageID);
+  if (!body) return;
 
   const cmd = body.trim().split(" ");
   const action = cmd[0].toLowerCase();
@@ -117,6 +69,66 @@ global.Utils.handleReply = async function ({ api, event, message, listRequest, c
   api.sendMessage(
     `✅ Successfully ${action === "confirm" ? "confirmed" : "deleted"} ${success.length} request(s):\n${success.join("\n")}${failed.length > 0 ? `\n❌ Failed: ${failed.join("\n")}` : ""}`,
     threadID,
+    messageID
+  );
+};
+
+module.exports.config = {
+  name: "accept",
+  version: "1.0.4",
+  role: 2,
+  aliases: ["friend"],
+  credits: "BLACK (fixed by AJ)",
+  description: "Confirm or delete friend requests via Facebook ID",
+  cooldown: 0,
+};
+
+module.exports.run = async function ({ api, event }) {
+  const { threadID, messageID } = event;
+
+  const form = {
+    av: api.getCurrentUserID(),
+    fb_api_req_friendly_name: "FriendingCometFriendRequestsRootQueryRelayPreloader",
+    fb_api_caller_class: "RelayModern",
+    doc_id: "4499164963466303",
+    variables: JSON.stringify({ input: { scale: 3 } }),
+  };
+
+  const res = await api.httpPost("https://www.facebook.com/api/graphql/", form);
+  const listRequest = JSON.parse(res).data.viewer.friending_possibilities.edges;
+
+  if (!listRequest || listRequest.length === 0) {
+    return api.sendMessage("✨ No pending friend requests.", threadID, messageID);
+  }
+
+  let msg = "";
+  let i = 0;
+  for (const user of listRequest) {
+    i++;
+    msg +=
+      `\n${i}. 𝐍𝐚𝐦𝐞: ${user.node.name}` +
+      `\n𝐈𝐃: ${user.node.id}` +
+      `\n𝐔𝐫𝐥: ${user.node.url.replace("www.facebook", "fb")}` +
+      `\n𝐓𝐢𝐦𝐞: ${moment(user.time * 1000)
+        .tz("Asia/Manila")
+        .format("DD/MM/YYYY HH:mm:ss")}\n`;
+  }
+
+  return api.sendMessage(
+    `${msg}\n\nReply with: <confirm | del> <order | all> to take action`,
+    threadID,
+    (err, info) => {
+      if (!err) {
+        // gamitin ang global.Utils.handleReply
+        global.GoatBot.onReply.set(info.messageID, {
+          commandName: module.exports.config.name,
+          messageID: info.messageID,
+          author: event.senderID,
+          listRequest,
+          handleReply: global.Utils.handleReply
+        });
+      }
+    },
     messageID
   );
 };
