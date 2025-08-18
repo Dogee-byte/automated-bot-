@@ -3,9 +3,9 @@ const fs = require('fs-extra');
 
 module.exports.config = {
   name: "faceswap",
-  version: "1.0.0",
+  version: "1.0.1",
   role: 0,
-  credits: "Vern",
+  credits: "Vern (fix by AJ)",
   description: "Swap faces of two replied images",
   aliases: [],
   usages: "< reply two images >",
@@ -29,8 +29,8 @@ module.exports.run = async ({ api, event }) => {
     return api.sendMessage("❌ GIF images are not supported. Please reply using two normal images.", threadID, messageID);
   }
 
-  const url1 = image1.url;
-  const url2 = image2.url;
+  const targetUrl = image1.url;
+  const sourceUrl = image2.url;
 
   try {
     api.sendMessage("⌛ Swapping faces, please wait...", threadID, messageID);
