@@ -35,7 +35,7 @@ module.exports.run = async ({ api, event }) => {
   try {
     api.sendMessage("⌛ Swapping faces, please wait...", threadID, messageID);
 
-    const faceswapUrl = `https://kaiz-apis.gleeze.com/api/faceswap-v3?image1=${encodeURIComponent(url1)}&image2=${encodeURIComponent(url2)}&apikey=0ff49fce-1537-4798-9d90-69db487be671`;
+    const faceswapUrl = `https://kaiz-apis.gleeze.com/api/faceswap-v2?targetUrl=${encodeURIComponent(targetUrl)}&sourceUrl=${encodeURIComponent(sourceUrl)}&apikey=e8529ee4-e32f-4e01-b194-f207bec86068`;
 
     const imgBuffer = (await axios.get(faceswapUrl, { responseType: "arraybuffer" })).data;
     fs.writeFileSync(pathie, Buffer.from(imgBuffer));
