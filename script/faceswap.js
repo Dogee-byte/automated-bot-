@@ -4,7 +4,10 @@ const config = {
   name: "faceswap",
   version: "1.0.0",
   credits: "rapido // kaiz API",
-  description: "Swap faces between two replied photos"
+  description: "Swap faces between two replied photos",
+  usage: "faceswap (reply to 2 photos)",
+  cooldown: 5, 
+  role: 0 
 };
 
 async function onCall({ api, event }) {
