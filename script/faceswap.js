@@ -1,46 +1,45 @@
-const axios = require('axios');
-const fs = require('fs-extra');
+pastebin const axios = require("axios");
 
 module.exports.config = {
   name: "faceswap",
   version: "1.0.0",
-  role: 0,
-  credits: "Vern",
-  aliases: [],
-  usages: "< reply two images >",
-  cooldown: 2,
+  credits: "rapido // kaiz API",
+  description: "Swap faces between two replied photos",
+  usePrefix: true,
+  commandCategory: "image"
 };
 
-module.exports.run = async ({ api, event }) => {
-  let pathie = __dirname + `/cache/faceswapped-image.jpg`;
-  const { threadID, messageID } = event;
-
-  // Get the URLs of the two images from the reply
-  const image1 = event.messageReply?.attachments[0]?.url;
-  const image2 = event.messageReply?.attachments[1]?.url;
-
-  if (!image1 || !image2) {
-    return api.sendMessage("❌ Please reply to two images to use the face swap feature.", threadID, messageID);
-  }
-
+module.exports.run = async function ({ api, event }) {
   try {
-    api.sendMessage("⌛ Swapping faces, please wait...", threadID, messageID);
+    let targetUrl, sourceUrl;
 
-    // Call the face swap API
-    const faceswapUrl = `https://kaiz-apis.gleeze.com/api/faceswap-v3?image1=${encodeURIComponent(image1)}&image2=${encodeURIComponent(image2)}&apikey=0ff49fce-1537-4798-9d90-69db487be671`;
+    if (event.messageReply?.attachments?.length >= 2) {
+      if (event.messageReply.attachments[0]?.type === "photo") {
+        targetUrl = event.messageReply.attachments[0].url;
+      }
+      if (event.messageReply.attachments[1]?.type === "photo") {
+        sourceUrl = event.messageReply.attachments[1].url;
+      }
+    }
 
-    // Fetch the processed image
-    const img = (await axios.get(faceswapUrl, { responseType: "arraybuffer" })).data;
+    if (!targetUrl || !sourceUrl) {
+      return api.sendMessage("❌ Please reply with two photos.", event.threadID, event.messageID);
+    }
 
-    // Save the image to the file system
-    fs.writeFileSync(pathie, Buffer.from(img, 'utf-8'));
+    const apiUrl = `https://kaiz-apis.gleeze.com/api/faceswap-v2?targetUrl=${encodeURIComponent(targetUrl)}&sourceUrl=${encodeURIComponent(sourceUrl)}&apikey=e8529ee4-e32f-4e01-b194-f207bec86068`;
 
-    // Send the face-swapped image back to the user
-    api.sendMessage({
-      body: "🪄| Face swap completed successfully",
-      attachment: fs.createReadStream(pathie)
-    }, threadID, () => fs.unlinkSync(pathie), messageID);
+    const response = await axios.get(apiUrl, { responseType: "stream" });
+
+    return api.sendMessage(
+      {
+        body: "✅ Here’s the faceswapped photo:",
+        attachment: response.data
+      },
+      event.threadID,
+      event.messageID
+    );
+
   } catch (error) {
-    api.sendMessage(`❌ Error: ${error.message}`, threadID, messageID);
+    return api.sendMessage("⚠️ Failed to process the photos.", event.threadID, event.messageID);
   }
 };
