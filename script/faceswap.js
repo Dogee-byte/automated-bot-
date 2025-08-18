@@ -1,15 +1,13 @@
-pastebin const axios = require("axios");
+const axios = require("axios");
 
-module.exports.config = {
+const config = {
   name: "faceswap",
   version: "1.0.0",
   credits: "rapido // kaiz API",
-  description: "Swap faces between two replied photos",
-  usePrefix: true,
-  commandCategory: "image"
+  description: "Swap faces between two replied photos"
 };
 
-module.exports.run = async function ({ api, event }) {
+async function onCall({ api, event }) {
   try {
     let targetUrl, sourceUrl;
 
@@ -42,4 +40,6 @@ module.exports.run = async function ({ api, event }) {
   } catch (error) {
     return api.sendMessage("⚠️ Failed to process the photos.", event.threadID, event.messageID);
   }
-};
+}
+
+module.exports = { config, onCall };
