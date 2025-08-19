@@ -2,7 +2,7 @@ module.exports.config = {
   name: "allgroups",
   version: "2.0.2",
   permission: 2,
-  credits: "ari (fixed by GPT)",
+  credits: "ari",
   description: "Show all groups and manage ban/out",
   prefix: true,
   premium: false,
