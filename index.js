@@ -1,8 +1,6 @@
 const fs = require("fs");
 const path = require("path");
 
-const appState = require("./appstate.json");
-
 global.client = {};
 global.client.commands = new Map();
 global.client.handleReply = [];
