@@ -4,7 +4,6 @@ module.exports.config = {
   permission: 2,
   credits: "ari",
   description: "Show all groups and manage ban/out",
-  prefix: true,
   premium: false,
   category: "admin",
   usages: "groups",
