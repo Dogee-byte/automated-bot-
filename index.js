@@ -1,4 +1,3 @@
-// index.js or main.js
 const login = require("fb-chat-api");
 const fs = require("fs");
 const path = require("path");
