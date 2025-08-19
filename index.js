@@ -1,67 +1,27 @@
-const fs = require("fs");
-const path = require("path");
+const { spawn } = require("child_process");
+const path = require('path');
 
-global.client = {};
-global.client.commands = new Map();
-global.client.handleReply = [];
-global.client.handleReaction = [];
+const SCRIPT_FILE = "auto.js";
+const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
 
-global.data = {};
-global.data.threadBanned = new Map();
 
-const commandFiles = fs.readdirSync(__dirname + "/modules/commands").filter(f => f.endsWith(".js"));
-for (const file of commandFiles) {
-  const cmd = require(`./modules/commands/${file}`);
-  global.client.commands.set(cmd.config.name, cmd);
-  console.log("Loaded command:", cmd.config.name);
+function start() {
+    const main = spawn("node", [SCRIPT_PATH], {
+        cwd: __dirname,
+        stdio: "inherit",
+        shell: true
+    });
+
+    main.on("close", (exitCode) => {
+        if (exitCode === 0) {
+            console.log("Main process exited with code 0");
+        } else if (exitCode === 1) {
+            console.log("Main process exited with code 1. Restarting...");
+            start();
+        }  else {
+            console.error(`Main process exited with code ${exitCode}`);
+        }
+    });
 }
 
-login({ appState }, (err, api) => {
-  if (err) return console.error("FB login failed:", err);
-
-  api.setOptions({ listenEvents: true, autoMarkDelivery: true });
-
-  api.listenMqtt(async (err, event) => {
-    if (err) return console.error(err);
-
-    if (event.type === "message" || event.type === "message_reply") {
-      const body = event.body;
-      const prefix = "!";  
-
-      if (global.client.handleReply.length > 0) {
-        const replyData = global.client.handleReply.find(x => x.messageID == event.messageID);
-        if (replyData) {
-          const cmd = global.client.commands.get(replyData.name);
-          if (cmd && typeof cmd.handleReply === "function") {
-            return cmd.handleReply({ api, event, handleReply: replyData });
-          }
-        }
-      }
-
-      if (body && body.startsWith(prefix)) {
-        const args = body.slice(prefix.length).trim().split(/\s+/);
-        const cmdName = args.shift().toLowerCase();
-
-        const command = global.client.commands.get(cmdName);
-        if (!command) return;
-
-        try {
-          command.run({ api, event, args });
-        } catch (err) {
-          console.log("Error:", err);
-        }
-      }
-    }
-
-    // (Optional) handle reactions
-    if (event.type === "message_reaction") {
-      const reactData = global.client.handleReaction.find(x => x.messageID == event.messageID);
-      if (reactData) {
-        const command = global.client.commands.get(reactData.name);
-        if (command && typeof command.handleReaction === "function") {
-          return command.handleReaction({ api, event, handleReaction: reactData });
-        }
-      }
-    }
-  });
-});
+start();
