@@ -1,3 +1,14 @@
+module.exports.config = {
+  name: "adventure",
+  version: "3.0.0",
+  credits: "ARI",
+  description: "Full RPG adventure game with battles, leveling, and inventory",
+  usage: "adventure | adventure status",
+  cooldown: 5,
+  role: 0,
+  hasPrefix: false
+};
+
 const players = {};
 
 function initPlayer(id) {
@@ -49,17 +60,6 @@ const bosses = [
   { name: "🦴 Skeleton King", hp: 70, atk: 12 }
 ];
 
-module.exports.config = {
-  name: "adventure",
-  version: "3.0.0",
-  credits: "ARI",
-  description: "Full RPG adventure game with battles, leveling, and inventory",
-  usage: "{p}adventure | {p}adventure status",
-  cooldown: 5,
-  role: 0,
-  hasPrefix: false
-};
-
 module.exports.onCall = async function ({ message, args }) {
   const userId = message.senderID;
   initPlayer(userId);
@@ -109,7 +109,7 @@ module.exports.onReply = async function ({ message, event, Reply }) {
 
   const player = players[userId];
   const choice = event.body.trim();
-  
+
   if (Reply.type === "battle") {
     const boss = player.currentBoss;
     let msg = "";
