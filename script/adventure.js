@@ -1,13 +1,4 @@
-export const config = {
-  name: "adventure",
-  version: "3.0.0",
-  credits: "ARI",
-  description: "Full RPG adventure game with battles, leveling, and inventory",
-  usage: "{p}adventure | {p}status",
-  cooldown: 5
-};
-
-let players = {};
+const players = {};
 
 function initPlayer(id) {
   if (!players[id]) {
@@ -58,7 +49,17 @@ const bosses = [
   { name: "🦴 Skeleton King", hp: 70, atk: 12 }
 ];
 
-export async function onCall({ message, args }) {
+module.exports.config = {
+  name: "adventure",
+  aliases: ["rpg", "game"],
+  version: "3.0.0",
+  credits: "ARI",
+  description: "Full RPG adventure game with battles, leveling, and inventory",
+  usage: "{p}adventure | {p}adventure status",
+  cooldown: 5
+};
+
+module.exports.onCall = async function ({ message, args }) {
   const userId = message.senderID;
   initPlayer(userId);
 
@@ -70,6 +71,7 @@ export async function onCall({ message, args }) {
     );
   }
 
+  // Battle Encounter
   if (Math.random() < 0.2 && !player.inBattle) {
     const boss = bosses[Math.floor(Math.random() * bosses.length)];
     player.inBattle = true;
@@ -77,30 +79,32 @@ export async function onCall({ message, args }) {
     player.currentBoss = boss;
 
     return message.reply(
-      `⚔️ A wild ${boss.name} appears!\nHP: ${boss.hp}\n\nChoose your move:\n1️⃣ Attack\n2️⃣ Defend\n3️⃣ Heal`
-    , (err, info) => {
-      global.utils.handleReply.push({
-        name: config.name,
-        messageID: info.messageID,
-        author: userId,
-        type: "battle"
-      });
-    });
+      `⚔️ A wild ${boss.name} appears!\nHP: ${boss.hp}\n\nChoose your move:\n1️⃣ Attack\n2️⃣ Defend\n3️⃣ Heal`,
+      (err, info) => {
+        global.utils.handleReply.push({
+          name: module.exports.config.name,
+          messageID: info.messageID,
+          author: userId,
+          type: "battle"
+        });
+      }
+    );
   }
 
+  // Story Event
   const scene = scenarios[Math.floor(Math.random() * scenarios.length)];
   message.reply(scene.text, (err, info) => {
     global.utils.handleReply.push({
-      name: config.name,
+      name: module.exports.config.name,
       messageID: info.messageID,
       author: userId,
       type: "story",
       choices: scene.choices
     });
   });
-}
+};
 
-export async function onReply({ message, event, Reply }) {
+module.exports.onReply = async function ({ message, event, Reply }) {
   const userId = event.senderID;
   if (userId !== Reply.author) return;
 
@@ -145,7 +149,7 @@ export async function onReply({ message, event, Reply }) {
     }
 
     if (player.hp <= 0) {
-      players[userId] = null;
+      delete players[userId];
       return message.reply(`${msg}\n💀 You were defeated by ${boss.name}! Game Over. Type 'adventure' to restart.`);
     } else if (player.bossHp <= 0) {
       player.inBattle = false;
@@ -167,7 +171,7 @@ export async function onReply({ message, event, Reply }) {
       const levelUpMsg = gainExp(player, outcome.exp || 0);
 
       if (player.hp <= 0) {
-        players[userId] = null;
+        delete players[userId];
         return message.reply("💀 You fainted... Game Over! Type 'adventure' to restart.");
       }
 
@@ -180,4 +184,4 @@ export async function onReply({ message, event, Reply }) {
       return message.reply("❌ Invalid choice. Reply with the correct number.");
     }
   }
-}
+};
