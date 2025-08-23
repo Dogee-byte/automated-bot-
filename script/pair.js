@@ -5,19 +5,21 @@ const axios = require("axios");
 
 module.exports.config = {
   name: "pair",
-  version: "1.0.1",
+  version: "3.0.2",
   role: 0,
   credits: "ARI",
-  description: "Randomly pairs you with someone in the group with canvas + profile pics",
+  description: "Randomly pairs you with someone in the group (with profile pics on canvas)",
   aliases: ["ship", "partner"],
   cooldown: 5,
 };
 
-module.exports.run = async function ({ api, event, Users }) {
+module.exports.run = async function ({ api, event }) {
   try {
     const { threadID, messageID, senderID, mentions } = event;
-    const name1 = await Users.getNameUser(senderID);
-    let name2, uid2;
+    let name1, name2, uid2;
+
+    const info = await api.getUserInfo(senderID);
+    name1 = info[senderID].name;
 
     if (Object.keys(mentions).length > 0) {
       uid2 = Object.keys(mentions)[0];
@@ -25,13 +27,10 @@ module.exports.run = async function ({ api, event, Users }) {
     } else {
       const threadInfo = await api.getThreadInfo(threadID);
       const members = threadInfo.participantIDs.filter(id => id !== senderID);
-
-      if (members.length === 0) {
-        return api.sendMessage("❌ Wala kang mapapair dito.", threadID, messageID);
-      }
-
+      if (members.length === 0) return api.sendMessage("❌ Walang mapapair dito.", threadID, messageID);
       uid2 = members[Math.floor(Math.random() * members.length)];
-      name2 = await Users.getNameUser(uid2);
+      const info2 = await api.getUserInfo(uid2);
+      name2 = info2[uid2].name;
     }
 
     const percent = Math.floor(Math.random() * 101);
@@ -51,11 +50,11 @@ module.exports.run = async function ({ api, event, Users }) {
 
     ctx.fillStyle = "#ffe4ec";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
+
     ctx.fillStyle = "#d81b60";
     ctx.font = "bold 32px Sans";
     ctx.textAlign = "center";
-    ctx.fillText("❤️ Pair Result ❤️", canvas.width / 2, 50);
+    ctx.fillText("💞 Pair Result 💞", canvas.width / 2, 50);
 
     const drawCircleImage = (img, x, y, size) => {
       ctx.save();
@@ -73,7 +72,7 @@ module.exports.run = async function ({ api, event, Users }) {
     ctx.fillStyle = "#e91e63";
     ctx.font = "80px Sans";
     ctx.fillText("❤️", canvas.width / 2, 220);
-  
+
     ctx.fillStyle = "#000";
     ctx.font = "22px Sans";
     ctx.fillText(`${name1}`, 190, 340);
@@ -116,7 +115,7 @@ module.exports.run = async function ({ api, event, Users }) {
     });
 
   } catch (err) {
-    console.error(err);
-    api.sendMessage("⚠️ Error pairing.", event.threadID, event.messageID);
+    console.error("PAIR ERROR:", err);
+    api.sendMessage("⚠️ Error pairing", event.threadID, event.messageID);
   }
 };
