@@ -2,7 +2,7 @@ module.exports.config = {
   name: "greet",
   version: "1.1.0",
   hasPermission: 0,
-  credits: "AJ",
+  credits: "ARI",
   description: "Auto responds to common greetings",
   commandCategory: "autobot",
   usages: "[hi | hello | etc.]",
@@ -26,11 +26,11 @@ module.exports.handleEvent = async function ({ event, api }) {
       "ano na naman ba? panay ka hi at hello",
       "puro nalang ba tayo hi at hello?",
       "hi babe, kain?",
-      "hi, nakita mo ba owner kong si ari n aj?",
+      "hi, nakita mo ba owner kong si ari?",
       "hi bitch, how's your day?",
       "hi po, send boobies cravings lang 🥺🥺💔",
-      "👋 Kumusta ka?",
-      "Hello hello! 🔔",
+      "hipo",
+      "hi, ako paba?",
       "hi beh, pwede ka bang landiin?"
     ];
 
