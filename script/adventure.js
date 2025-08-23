@@ -1,11 +1,12 @@
-module.exports = {
-  config: {
+module.exports.config = {
     name: "adventure",
     version: "3.0.0",
     credits: "ARI",
     description: "Full RPG adventure game with battles, leveling, inventory, and PvP!",
     usage: "{p}adventure | {p}adventure status | {p}adventure pvp <@mention>",
-    cooldown: 5
+    cooldown: 5,
+    hasPrefix: false,
+    role: 0
   },
 
   players: {},
