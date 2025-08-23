@@ -1,68 +1,121 @@
-const axios = require('axios');
+const { createCanvas, loadImage } = require("canvas");
+const fs = require("fs");
+const path = require("path");
+const axios = require("axios");
 
 module.exports.config = {
   name: "pair",
-  version: "1.0.0",
+  version: "3.0.0",
   role: 0,
-  hasPrefix: true,
-  credits: "Vern",
-  description: "Pairs two users and shows their match rate.",
-  usages: "{p}pair",
-  cooldown: 15,
+  credits: "ARI",
+  description: "Randomly pairs you with someone in the group with canvas + profile pics",
+  aliases: ["ship", "partner"],
+  cooldown: 5,
 };
 
-let fontEnabled = true;
+module.exports.run = async function ({ api, event, Users }) {
+  try {
+    const { threadID, messageID, senderID, mentions } = event;
+    const name1 = await Users.getNameUser(senderID);
+    let name2, uid2;
 
-function formatFont(text) {
-  const fontMapping = {
-    a: "𝖺", b: "𝖻", c: "𝖼", d: "𝖽", e: "𝖾", f: "𝖿", g: "𝗀", h: "𝗁", i: "𝗂", j: "𝗃", k: "𝗄", l: "𝗅", m: "𝗆",
-    n: "𝗇", o: "𝗈", p: "𝗉", q: "𝗊", r: "𝗋", s: "𝗌", t: "𝗍", u: "𝗎", v: "𝗏", w: "𝗐", x: "𝗑", y: "𝗒", z: "𝗓",
-    A: "𝖠", B: "𝖡", C: "𝖢", D: "𝖣", E: "𝖤", F: "𝖥", G: "𝖦", H: "𝖧", I: "𝖨", J: "𝖩", K: "𝖪", L: "𝖫", M: "𝖬",
-    N: "𝖭", O: "𝖮", P: "𝖯", Q: "𝖰", R: "𝖱", S: "𝖲", T: "𝖳", U: "𝖴", V: "𝖵", W: "𝖶", X: "𝖷", Y: "𝗒", Z: "𝖹"
-  };
-
-  let formattedText = "";
-  for (const char of text) {
-    if (fontEnabled && char in fontMapping) {
-      formattedText += fontMapping[char];
+    if (Object.keys(mentions).length > 0) {
+      uid2 = Object.keys(mentions)[0];
+      name2 = mentions[uid2];
     } else {
-      formattedText += char;
+      const threadInfo = await api.getThreadInfo(threadID);
+      const members = threadInfo.participantIDs.filter(id => id !== senderID);
+
+      if (members.length === 0) {
+        return api.sendMessage("❌ Wala kang mapapair dito.", threadID, messageID);
+      }
+
+      uid2 = members[Math.floor(Math.random() * members.length)];
+      name2 = await Users.getNameUser(uid2);
     }
+
+    const percent = Math.floor(Math.random() * 101);
+
+    const getAvatar = async (uid) => {
+      const url = `https://graph.facebook.com/${uid}/picture?height=300&width=300&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
+      const response = await axios.get(url, { responseType: "arraybuffer" });
+      return await loadImage(response.data);
+    };
+
+    const avatar1 = await getAvatar(senderID);
+    const avatar2 = await getAvatar(uid2);
+
+    const canvas = createCanvas(700, 400);
+    const ctx = canvas.getContext("2d");
+
+    ctx.fillStyle = "#ffe4ec";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = "#d81b60";
+    ctx.font = "bold 32px Sans";
+    ctx.textAlign = "center";
+    ctx.fillText("💞 Pair Result 💞", canvas.width / 2, 50);
+
+    const drawCircleImage = (img, x, y, size) => {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2, true);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(img, x, y, size, size);
+      ctx.restore();
+    };
+
+    drawCircleImage(avatar1, 100, 120, 180);
+    drawCircleImage(avatar2, 420, 120, 180);
+
+    ctx.fillStyle = "#e91e63";
+    ctx.font = "80px Sans";
+    ctx.fillText("❤️", canvas.width / 2, 220);
+    
+    ctx.fillStyle = "#000";
+    ctx.font = "22px Sans";
+    ctx.fillText(`${name1}`, 190, 340);
+    ctx.fillText(`${name2}`, 490, 340);
+
+    ctx.fillStyle = "#880e4f";
+    ctx.font = "bold 30px Sans";
+    ctx.fillText(`Compatibility: ${percent}%`, canvas.width / 2, 380);
+
+    const quotes = [
+      "💘 Destiny has spoken!",
+      "😂 Aba! May chemistry kayo!",
+      "🔥 Sparks are flying!",
+      "🌹 Love is in the air!",
+      "🤣 Bagay kayo parang copy at paste!",
+      "✨ The stars have aligned!",
+      "😳 Uy, kinikilig ako para sa inyo!"
+    ];
+    const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+
+    ctx.fillStyle = "#4a148c";
+    ctx.font = "18px Sans";
+    ctx.fillText(randomQuote, canvas.width / 2, 100);
+
+    const filePath = path.join(__dirname, "pair.png");
+    const out = fs.createWriteStream(filePath);
+    const stream = canvas.createPNGStream();
+    stream.pipe(out);
+
+    out.on("finish", () => {
+      api.sendMessage(
+        {
+          body: `💞 Pair Result: ${name1} ❤️ ${name2}`,
+          attachment: fs.createReadStream(filePath)
+        },
+        threadID,
+        () => fs.unlinkSync(filePath),
+        messageID
+      );
+    });
+
+  } catch (err) {
+    console.error(err);
+    api.sendMessage("⚠️ Nagka-error sa pag-pair (canvas).", event.threadID, event.messageID);
   }
-
-  return formattedText;
-}
-
-module.exports.run = async function ({ api, event, args }) {
-  const { threadID, messageID, senderID } = event;
-  var tl = ['21%', '67%', '19%', '37%', '17%', '96%', '52%', '62%', '76%', '83%', '100%', '99%', "0%", "48%"];
-  var tle = tl[Math.floor(Math.random() * tl.length)];
-
-  let dataa = await api.getUserInfo(event.senderID);
-  let namee = await dataa[event.senderID].name;
-
-  let loz = await api.getThreadInfo(event.threadID);
-  var emoji = loz.participantIDs;
-  var id = emoji[Math.floor(Math.random() * emoji.length)];
-
-  let data = await api.getUserInfo(id);
-  let name = await data[id].name;
-
-  var arraytag = [];
-  arraytag.push({ id: event.senderID, tag: namee });
-  arraytag.push({ id: id, tag: name });
-
-  var sex = await data[id].gender;
-  var gender = sex == 2 ? "Male🧑" : sex == 1 ? "Female👩‍" : "Gay";
-
-  let messageBody = formatFont(`Congrats ${namee} has been paired with ${name}\nThe Match rate is: ${tle}`);
-
-  let url = `https://api.popcat.xyz/ship?user1=https://api-canvass.vercel.app/profile?uid=${event.senderID}&user2=https://api-canvass.vercel.app/profile?uid=${id}`;
-  let response = await axios.get(url, { responseType: 'stream' });
-
-  api.sendMessage({
-    body: messageBody,
-    mentions: arraytag,
-    attachment: response.data
-  }, threadID, messageID);
 };
