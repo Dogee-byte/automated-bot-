@@ -51,12 +51,13 @@ const bosses = [
 
 module.exports.config = {
   name: "adventure",
-  aliases: ["rpg", "game"],
   version: "3.0.0",
   credits: "ARI",
   description: "Full RPG adventure game with battles, leveling, and inventory",
   usage: "{p}adventure | {p}adventure status",
-  cooldown: 5
+  cooldown: 5,
+  role: 0,
+  hasPrefix: false
 };
 
 module.exports.onCall = async function ({ message, args }) {
@@ -71,7 +72,6 @@ module.exports.onCall = async function ({ message, args }) {
     );
   }
 
-  // Battle Encounter
   if (Math.random() < 0.2 && !player.inBattle) {
     const boss = bosses[Math.floor(Math.random() * bosses.length)];
     player.inBattle = true;
@@ -91,7 +91,6 @@ module.exports.onCall = async function ({ message, args }) {
     );
   }
 
-  // Story Event
   const scene = scenarios[Math.floor(Math.random() * scenarios.length)];
   message.reply(scene.text, (err, info) => {
     global.utils.handleReply.push({
@@ -110,13 +109,12 @@ module.exports.onReply = async function ({ message, event, Reply }) {
 
   const player = players[userId];
   const choice = event.body.trim();
-
-  // Battle System
+  
   if (Reply.type === "battle") {
     const boss = player.currentBoss;
     let msg = "";
 
-    if (choice === "1") { // Attack
+    if (choice === "1") { 
       let damage = Math.floor(Math.random() * 20) + 10;
       if (Math.random() < 0.2) {
         damage *= 2;
@@ -125,11 +123,11 @@ module.exports.onReply = async function ({ message, event, Reply }) {
       player.bossHp -= damage;
       msg += `⚔️ You attacked ${boss.name} for ${damage} damage!\n`;
 
-    } else if (choice === "2") { // Defend
+    } else if (choice === "2") { 
       msg += "🛡️ You brace yourself, reducing incoming damage.\n";
       player.defending = true;
 
-    } else if (choice === "3") { // Heal
+    } else if (choice === "3") { 
       let heal = Math.floor(Math.random() * 20) + 10;
       player.hp = Math.min(player.maxHp, player.hp + heal);
       msg += `✨ You healed for ${heal} HP!\n`;
@@ -149,7 +147,7 @@ module.exports.onReply = async function ({ message, event, Reply }) {
     }
 
     if (player.hp <= 0) {
-      delete players[userId];
+      players[userId] = null;
       return message.reply(`${msg}\n💀 You were defeated by ${boss.name}! Game Over. Type 'adventure' to restart.`);
     } else if (player.bossHp <= 0) {
       player.inBattle = false;
@@ -161,7 +159,6 @@ module.exports.onReply = async function ({ message, event, Reply }) {
     }
   }
 
-  // Story Choices
   if (Reply.type === "story") {
     if (Reply.choices[choice]) {
       const outcome = Reply.choices[choice];
@@ -171,7 +168,7 @@ module.exports.onReply = async function ({ message, event, Reply }) {
       const levelUpMsg = gainExp(player, outcome.exp || 0);
 
       if (player.hp <= 0) {
-        delete players[userId];
+        players[userId] = null;
         return message.reply("💀 You fainted... Game Over! Type 'adventure' to restart.");
       }
 
