@@ -10,11 +10,13 @@ module.exports.config = {
 };
 
 module.exports.handleEvent = async function ({ event, api }) {
-  const nameCalled = event.body.toLowerCase();
-  const adminNames = ["Ari", "hoy ari", "ari", "ARI", "si ari", "asan si ari?", "nasaan si ari?"];
+  if (!event.body) return;
 
-  const matched = adminNames.some(name => nameCalled.includes(name));
-  if (matched) {
+  const message = event.body.toLowerCase();
+
+  const pattern = /\bari\b/;
+
+  if (pattern.test(message)) {
     const responses = [
       "tangina ano na naman kailangan mo sa owner ko? 🤨",
       "wait mo lang boss, busy pa ata developer ko",
@@ -23,7 +25,8 @@ module.exports.handleEvent = async function ({ event, api }) {
       "wag isturbo may kabebetime pa owner ko.",
       "isa pang tawag sa owner ko ipapa-laplap kita sa kanya 🙄",
       "tawag nang tawag eh may kailangan ka ba sa boss ko? 😠😠",
-      "anong kailangan mo sa boss ko⁉️"
+      "anong kailangan mo sa boss ko⁉️",
+      "hanap nang hanap sa owner ko gusto mo ba siyang landiin ha??"
     ];
     const randomReply = responses[Math.floor(Math.random() * responses.length)];
     return api.sendMessage(randomReply, event.threadID, event.messageID);
