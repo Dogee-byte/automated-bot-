@@ -1,149 +1,132 @@
+let adventures = {};
+
+function randomEvent(adv) {
+  const events = [
+    {
+      text: "🌧️ It suddenly rains heavily! You get soaked and lose energy.",
+      effect: () => { adv.energy -= 10; adv.thirst += 10; }
+    },
+    {
+      text: "🐺 A wild animal appears in the distance. Luckily, it doesn’t notice you.",
+      effect: () => { adv.energy -= 5; }
+    },
+    {
+      text: "🍎 You found a small apple tree! You eat and feel better.",
+      effect: () => { adv.hunger += 20; adv.energy += 10; }
+    },
+    {
+      text: "🚶 You meet a lost traveler. He shares some water with you.",
+      effect: () => { adv.thirst += 20; }
+    },
+    {
+      text: "🕷️ You got bitten by an insect. You feel weaker.",
+      effect: () => { adv.energy -= 15; }
+    }
+  ];
+
+  if (Math.random() < 0.4) { // 40% chance
+    const event = events[Math.floor(Math.random() * events.length)];
+    event.effect();
+    return "\n\n⚡ Random Event: " + event.text;
+  }
+  return "";
+}
+
 module.exports.config = {
   name: "adventure",
-  version: "2.0.0",
-  role: 0,
-  credits: "Ari",
-  description: "Embark on RPG-style adventure 🏔️",
-  aliases: ["adv", "quest"],
-  cooldown: 5,
-  hasPrefix: false
+  aliases: ["adv", "survival"],
+  version: "3.0.0",
+  credits: "AJ + GPT-5",
+  description: "Realistic survival adventure with random events",
+  cooldown: 5
 };
 
-const adventures = {}; 
+module.exports.onCall = async function ({ message }) {
+  const userID = message.senderID;
 
-const monsters = [
-  { name: "Goblin", hp: 60, atk: [5, 12], exp: 15, loot: "Rusty Dagger 🗡️" },
-  { name: "Wolf", hp: 80, atk: [6, 14], exp: 20, loot: "Wolf Pelt 🐺" },
-  { name: "Orc", hp: 100, atk: [8, 18], exp: 30, loot: "Orcish Axe 🪓" },
-  { name: "Skeleton Knight", hp: 120, atk: [10, 20], exp: 40, loot: "Bone Shield 🛡️" },
-  { name: "Dragon", hp: 180, atk: [15, 30], exp: 100, loot: "Dragon Scale 🐉" }
-];
-
-function createPlayer() {
-  return {
-    hp: 120,
-    mp: 50,
-    level: 1,
-    exp: 0,
-    inventory: []
-  };
-}
-
-function randomBetween([min, max]) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-module.exports.onCall = async function ({ message, args, api }) {
-  const sender = message.senderID;
-
-  if (adventures[sender]) {
-    return message.reply("⚠️ You're already in an adventure! Use `attack`, `skill`, `heal`, or `run`.");
+  if (adventures[userID]) {
+    return message.reply("⚠️ You already have an ongoing adventure! Reply to continue.");
   }
-  
-  if (!adventures[sender]) adventures[sender] = { player: createPlayer() };
-  const monster = monsters[Math.floor(Math.random() * monsters.length)];
 
-  adventures[sender].monster = { ...monster };
-  adventures[sender].playerTurn = true;
+  adventures[userID] = {
+    stage: 1,
+    hunger: 50,   
+    thirst: 50,   
+    energy: 50,   
+    inventory: ["water", "chocolate"]
+  };
 
-  message.reply(
-    `🧭 You begin your adventure...\nSuddenly, a **${monster.name}** appears!\n\n` +
-    `❤️ Your HP: ${adventures[sender].player.hp} | 🔵 MP: ${adventures[sender].player.mp}\n` +
-    `💀 ${monster.name} HP: ${monster.hp}\n\n` +
-    `Commands: "attack", "skill", "heal", "run"`
-  );
-  
-  const listener = api.listenMqtt(async (err, event) => {
-    if (err) return;
-    if (event.senderID !== sender) return;
-    const adv = adventures[sender];
-    if (!adv) return;
+  const intro = `🌍 **Welcome to Survival Adventure!**
 
-    const player = adv.player;
-    const monster = adv.monster;
-    let msg = "";
+You wake up stranded in a dense forest after your bus broke down.  
+📊 Status: 🍖 Hunger: 50 | 💧 Thirst: 50 | ⚡ Energy: 50  
+🎒 Inventory: Water, Chocolate
 
-    if (event.body?.toLowerCase() === "attack") {
-      const dmg = randomBetween([10, 20]) + player.level * 2;
-      monster.hp -= dmg;
-      msg += `⚔️ You slash the ${monster.name} for ${dmg} damage!\n💀 ${monster.name} HP: ${monster.hp}\n`;
+What will you do first?  
+1️⃣ Look for a road  
+2️⃣ Search for other people  
+3️⃣ Explore deeper into the forest  
 
-      if (monster.hp <= 0) {
-        player.exp += monster.exp;
-        player.inventory.push(monster.loot);
-        msg += `\n🏆 You defeated the ${monster.name}!\n🎁 Loot: ${monster.loot}\n⭐ +${monster.exp} EXP\n`;
+👉 Reply with 1, 2, or 3 to choose.`;
 
-        if (player.exp >= player.level * 50) {
-          player.level++;
-          player.hp += 20;
-          player.mp += 10;
-          player.exp = 0;
-          msg += `🎉 LEVEL UP! You are now level ${player.level}.\n❤️ HP increased!\n🔵 MP increased!\n`;
-        }
+  message.reply(intro);
+};
 
-        delete adventures[sender];
-        listener();
-        return api.sendMessage(msg, event.threadID);
-      }
+module.exports.onReply = async function ({ message, args }) {
+  const userID = message.senderID;
+  const choice = args[0]?.trim();
+
+  if (!adventures[userID]) return;
+  let adv = adventures[userID];
+  let replyText = "";
+
+  function status() {
+    return `\n\n📊 Status:\n🍖 Hunger: ${adv.hunger}\n💧 Thirst: ${adv.thirst}\n⚡ Energy: ${adv.energy}`;
+  }
+
+  if (adv.stage === 1) {
+    if (choice === "1") {
+      adv.energy -= 10;
+      adv.thirst -= 5;
+      replyText = "🚶 You walk along a dirt path. After an hour, you find an old road sign but no cars in sight.\nNext step?\n1️⃣ Keep walking\n2️⃣ Rest and eat your chocolate";
+      adv.stage = 2;
+    } else if (choice === "2") {
+      adv.energy -= 5;
+      replyText = "📢 You call out for help... only silence. Suddenly, a stray dog approaches. It looks hungry.\nNext step?\n1️⃣ Share your chocolate\n2️⃣ Ignore and walk away";
+      adv.stage = 3;
+    } else if (choice === "3") {
+      adv.energy -= 15;
+      adv.thirst -= 10;
+      replyText = "🌲 You head deeper into the forest. You hear rushing water... maybe a river nearby.\nNext step?\n1️⃣ Follow the sound\n2️⃣ Climb a tree to scout";
+      adv.stage = 4;
+    } else {
+      replyText = "❌ Invalid choice. Reply with 1, 2, or 3.";
     }
-    
-    if (event.body?.toLowerCase() === "skill") {
-      if (player.mp < 15) {
-        return api.sendMessage("⚠️ Not enough MP to use a skill!", event.threadID);
-      }
-      player.mp -= 15;
-      const dmg = randomBetween([20, 35]) + player.level * 3;
-      monster.hp -= dmg;
-      msg += `🔥 You cast Fireball! It deals ${dmg} damage!\n💀 ${monster.name} HP: ${monster.hp}\n`;
+  }
 
-      if (monster.hp <= 0) {
-        player.exp += monster.exp;
-        player.inventory.push(monster.loot);
-        msg += `\n🏆 The ${monster.name} is burned to ashes!\n🎁 Loot: ${monster.loot}\n⭐ +${monster.exp} EXP\n`;
-
-        if (player.exp >= player.level * 50) {
-          player.level++;
-          player.hp += 20;
-          player.mp += 10;
-          player.exp = 0;
-          msg += `🎉 LEVEL UP! You are now level ${player.level}.\n`;
-        }
-
-        delete adventures[sender];
-        listener();
-        return api.sendMessage(msg, event.threadID);
-      }
+  else if (adv.stage === 2) {
+    if (choice === "1") {
+      adv.energy -= 15;
+      adv.thirst -= 10;
+      replyText = "🚷 You keep walking but it’s endless… the sun is setting. You feel tired.\nNext step?\n1️⃣ Look for shelter\n2️⃣ Keep moving despite exhaustion";
+      adv.stage = 5;
+    } else if (choice === "2") {
+      adv.hunger += 20;
+      adv.energy += 15;
+      replyText = "🍫 You eat your chocolate and regain some energy.\nBut now you have less food left.\nNext step?\n1️⃣ Keep walking\n2️⃣ Sit and wait for help";
+      adv.stage = 6;
+    } else {
+      replyText = "❌ Invalid choice.";
     }
+  }
 
-    if (event.body?.toLowerCase() === "heal") {
-      if (player.mp < 10) {
-        return api.sendMessage("⚠️ Not enough MP to heal!", event.threadID);
-      }
-      player.mp -= 10;
-      const heal = randomBetween([15, 30]);
-      player.hp += heal;
-      msg += `✨ You healed yourself for ${heal} HP!\n❤️ Current HP: ${player.hp}\n`;
-    }
+  replyText += randomEvent(adv);
 
-    if (event.body?.toLowerCase() === "run") {
-      msg += "🏃 You ran away safely from the monster!";
-      delete adventures[sender];
-      listener();
-      return api.sendMessage(msg, event.threadID);
-    }
+  if (adv.hunger <= 0 || adv.thirst <= 0 || adv.energy <= 0) {
+    replyText = "💀 You collapsed from exhaustion. Game Over.";
+    delete adventures[userID];
+  }
 
-    if (monster.hp > 0) {
-      const mdmg = randomBetween(monster.atk);
-      player.hp -= mdmg;
-      msg += `\n💥 The ${monster.name} strikes you for ${mdmg} damage!\n❤️ Your HP: ${player.hp}`;
-
-      if (player.hp <= 0) {
-        msg += `\n\n💀 You were slain by the ${monster.name}... Game Over.`;
-        delete adventures[sender];
-        listener();
-      }
-    }
-
-    return api.sendMessage(msg, event.threadID);
-  });
+  message.reply(replyText + status());
+  adventures[userID] = adv;
 };
