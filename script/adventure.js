@@ -1,184 +1,148 @@
-const players = {};
-
-function initPlayer(id) {
-  if (!players[id]) {
-    players[id] = {
-      level: 1,
-      exp: 0,
-      hp: 100,
-      maxHp: 100,
-      inventory: [],
-      inBattle: false,
-      bossHp: 0
-    };
-  }
-}
-
-function gainExp(player, amount) {
-  player.exp += amount;
-  if (player.exp >= player.level * 50) {
-    player.exp = 0;
-    player.level++;
-    player.maxHp += 20;
-    player.hp = player.maxHp;
-    return `🎉 You leveled up! Now Level ${player.level} 🔥\n(HP restored to ${player.maxHp} ❤️)`;
-  }
-  return "";
-}
-
-const scenarios = [
-  {
-    text: "🌲 You find a hidden path. Do you…\n1️⃣ Explore deeper\n2️⃣ Ignore it",
-    choices: {
-      "1": { text: "🔦 You discover a hidden shrine. +10 EXP 🏮", exp: 10, item: "Sacred Charm" },
-      "2": { text: "🚶 You move on safely, but nothing happens. +2 EXP", exp: 2 }
-    }
-  },
-  {
-    text: "🧙 A wizard offers you a potion. Do you…\n1️⃣ Drink it\n2️⃣ Refuse politely",
-    choices: {
-      "1": { text: "✨ It heals you fully! +5 EXP ❤️", exp: 5, hp: 100 },
-      "2": { text: "😅 The wizard curses you for refusing. -10 HP ⚡", hp: -10, exp: 2 }
-    }
-  }
-];
-
-const bosses = [
-  { name: "🐉 Dragon", hp: 80, atk: 15 },
-  { name: "👹 Demon Lord", hp: 100, atk: 20 },
-  { name: "🦴 Skeleton King", hp: 70, atk: 12 }
-];
-
 module.exports.config = {
   name: "adventure",
-  version: "3.0.0",
-  credits: "ARI",
-  description: "Full RPG adventure game with battles, leveling, and inventory",
-  usage: "{p}adventure | {p}adventure status",
-  cooldown: 5,
+  version: "2.0.0",
   role: 0,
-  hasPrefix: false
+  credits: "Ari",
+  description: "Embark on RPG-style adventure 🏔️",
+  aliases: ["adv", "quest"],
+  cooldown: 5
 };
 
-module.exports.onCall = async function ({ message, args }) {
-  const userId = message.senderID;
-  initPlayer(userId);
+const adventures = {}; 
 
-  const player = players[userId];
+const monsters = [
+  { name: "Goblin", hp: 60, atk: [5, 12], exp: 15, loot: "Rusty Dagger 🗡️" },
+  { name: "Wolf", hp: 80, atk: [6, 14], exp: 20, loot: "Wolf Pelt 🐺" },
+  { name: "Orc", hp: 100, atk: [8, 18], exp: 30, loot: "Orcish Axe 🪓" },
+  { name: "Skeleton Knight", hp: 120, atk: [10, 20], exp: 40, loot: "Bone Shield 🛡️" },
+  { name: "Dragon", hp: 180, atk: [15, 30], exp: 100, loot: "Dragon Scale 🐉" }
+];
 
-  if (args[0] === "status") {
-    return message.reply(
-      `📊 STATUS\n\n🏅 Level: ${player.level}\n⭐ EXP: ${player.exp}/${player.level * 50}\n❤️ HP: ${player.hp}/${player.maxHp}\n🎒 Inventory: ${player.inventory.length > 0 ? player.inventory.join(", ") : "Empty"}`
-    );
+function createPlayer() {
+  return {
+    hp: 120,
+    mp: 50,
+    level: 1,
+    exp: 0,
+    inventory: []
+  };
+}
+
+function randomBetween([min, max]) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+module.exports.onCall = async function ({ message, args, api }) {
+  const sender = message.senderID;
+
+  if (adventures[sender]) {
+    return message.reply("⚠️ You're already in an adventure! Use `attack`, `skill`, `heal`, or `run`.");
   }
+  
+  if (!adventures[sender]) adventures[sender] = { player: createPlayer() };
+  const monster = monsters[Math.floor(Math.random() * monsters.length)];
 
-  if (Math.random() < 0.2 && !player.inBattle) {
-    const boss = bosses[Math.floor(Math.random() * bosses.length)];
-    player.inBattle = true;
-    player.bossHp = boss.hp;
-    player.currentBoss = boss;
+  adventures[sender].monster = { ...monster };
+  adventures[sender].playerTurn = true;
 
-    return message.reply(
-      `⚔️ A wild ${boss.name} appears!\nHP: ${boss.hp}\n\nChoose your move:\n1️⃣ Attack\n2️⃣ Defend\n3️⃣ Heal`,
-      (err, info) => {
-        global.utils.handleReply.push({
-          name: module.exports.config.name,
-          messageID: info.messageID,
-          author: userId,
-          type: "battle"
-        });
-      }
-    );
-  }
+  message.reply(
+    `🧭 You begin your adventure...\nSuddenly, a **${monster.name}** appears!\n\n` +
+    `❤️ Your HP: ${adventures[sender].player.hp} | 🔵 MP: ${adventures[sender].player.mp}\n` +
+    `💀 ${monster.name} HP: ${monster.hp}\n\n` +
+    `Commands: "attack", "skill", "heal", "run"`
+  );
+  
+  const listener = api.listenMqtt(async (err, event) => {
+    if (err) return;
+    if (event.senderID !== sender) return;
+    const adv = adventures[sender];
+    if (!adv) return;
 
-  const scene = scenarios[Math.floor(Math.random() * scenarios.length)];
-  message.reply(scene.text, (err, info) => {
-    global.utils.handleReply.push({
-      name: module.exports.config.name,
-      messageID: info.messageID,
-      author: userId,
-      type: "story",
-      choices: scene.choices
-    });
-  });
-};
-
-module.exports.onReply = async function ({ message, event, Reply }) {
-  const userId = event.senderID;
-  if (userId !== Reply.author) return;
-
-  const player = players[userId];
-  const choice = event.body.trim();
-
-  if (Reply.type === "battle") {
-    const boss = player.currentBoss;
+    const player = adv.player;
+    const monster = adv.monster;
     let msg = "";
 
-    if (choice === "1") {
-      let damage = Math.floor(Math.random() * 20) + 10;
-      if (Math.random() < 0.2) {
-        damage *= 2;
-        msg += "💥 Critical Hit!\n";
+    if (event.body?.toLowerCase() === "attack") {
+      const dmg = randomBetween([10, 20]) + player.level * 2;
+      monster.hp -= dmg;
+      msg += `⚔️ You slash the ${monster.name} for ${dmg} damage!\n💀 ${monster.name} HP: ${monster.hp}\n`;
+
+      if (monster.hp <= 0) {
+        player.exp += monster.exp;
+        player.inventory.push(monster.loot);
+        msg += `\n🏆 You defeated the ${monster.name}!\n🎁 Loot: ${monster.loot}\n⭐ +${monster.exp} EXP\n`;
+
+        if (player.exp >= player.level * 50) {
+          player.level++;
+          player.hp += 20;
+          player.mp += 10;
+          player.exp = 0;
+          msg += `🎉 LEVEL UP! You are now level ${player.level}.\n❤️ HP increased!\n🔵 MP increased!\n`;
+        }
+
+        delete adventures[sender];
+        listener();
+        return api.sendMessage(msg, event.threadID);
       }
-      player.bossHp -= damage;
-      msg += `⚔️ You attacked ${boss.name} for ${damage} damage!\n`;
-
-    } else if (choice === "2") {
-      msg += "🛡️ You brace yourself, reducing incoming damage.\n";
-      player.defending = true;
-
-    } else if (choice === "3") {
-      let heal = Math.floor(Math.random() * 20) + 10;
-      player.hp = Math.min(player.maxHp, player.hp + heal);
-      msg += `✨ You healed for ${heal} HP!\n`;
-
-    } else {
-      return message.reply("❌ Invalid choice. Reply with 1, 2, or 3.");
     }
-
-    if (player.bossHp > 0) {
-      let bossDmg = boss.atk;
-      if (player.defending) {
-        bossDmg = Math.floor(bossDmg / 2);
-        player.defending = false;
+    
+    if (event.body?.toLowerCase() === "skill") {
+      if (player.mp < 15) {
+        return api.sendMessage("⚠️ Not enough MP to use a skill!", event.threadID);
       }
-      player.hp -= bossDmg;
-      msg += `${boss.name} hits you for ${bossDmg} damage! 💢\n`;
+      player.mp -= 15;
+      const dmg = randomBetween([20, 35]) + player.level * 3;
+      monster.hp -= dmg;
+      msg += `🔥 You cast Fireball! It deals ${dmg} damage!\n💀 ${monster.name} HP: ${monster.hp}\n`;
+
+      if (monster.hp <= 0) {
+        player.exp += monster.exp;
+        player.inventory.push(monster.loot);
+        msg += `\n🏆 The ${monster.name} is burned to ashes!\n🎁 Loot: ${monster.loot}\n⭐ +${monster.exp} EXP\n`;
+
+        if (player.exp >= player.level * 50) {
+          player.level++;
+          player.hp += 20;
+          player.mp += 10;
+          player.exp = 0;
+          msg += `🎉 LEVEL UP! You are now level ${player.level}.\n`;
+        }
+
+        delete adventures[sender];
+        listener();
+        return api.sendMessage(msg, event.threadID);
+      }
     }
 
-    if (player.hp <= 0) {
-      delete players[userId];
-      return message.reply(`${msg}\n💀 You were defeated by ${boss.name}! Game Over. Type 'adventure' to restart.`);
-    } else if (player.bossHp <= 0) {
-      player.inBattle = false;
-      const expGain = 30 + Math.floor(Math.random() * 20);
-      const levelUpMsg = gainExp(player, expGain);
-      return message.reply(`${msg}\n🏆 You defeated ${boss.name}!\n⭐ Gained ${expGain} EXP\n${levelUpMsg}`);
-    } else {
-      return message.reply(`${msg}\n\n❤️ Your HP: ${player.hp}/${player.maxHp}\n👹 ${boss.name}'s HP: ${player.bossHp}`);
+    if (event.body?.toLowerCase() === "heal") {
+      if (player.mp < 10) {
+        return api.sendMessage("⚠️ Not enough MP to heal!", event.threadID);
+      }
+      player.mp -= 10;
+      const heal = randomBetween([15, 30]);
+      player.hp += heal;
+      msg += `✨ You healed yourself for ${heal} HP!\n❤️ Current HP: ${player.hp}\n`;
     }
-  }
 
-  if (Reply.type === "story") {
-    if (Reply.choices[choice]) {
-      const outcome = Reply.choices[choice];
-      player.hp += outcome.hp || 0;
-      if (outcome.hp === 100) player.hp = player.maxHp;
-      if (outcome.item) player.inventory.push(outcome.item);
-      const levelUpMsg = gainExp(player, outcome.exp || 0);
+    if (event.body?.toLowerCase() === "run") {
+      msg += "🏃 You ran away safely from the monster!";
+      delete adventures[sender];
+      listener();
+      return api.sendMessage(msg, event.threadID);
+    }
+
+    if (monster.hp > 0) {
+      const mdmg = randomBetween(monster.atk);
+      player.hp -= mdmg;
+      msg += `\n💥 The ${monster.name} strikes you for ${mdmg} damage!\n❤️ Your HP: ${player.hp}`;
 
       if (player.hp <= 0) {
-        delete players[userId];
-        return message.reply("💀 You fainted... Game Over! Type 'adventure' to restart.");
+        msg += `\n\n💀 You were slain by the ${monster.name}... Game Over.`;
+        delete adventures[sender];
+        listener();
       }
-
-      let replyMsg = `${outcome.text}\n\n⭐ EXP: ${player.exp}/${player.level * 50}\n❤️ HP: ${player.hp}/${player.maxHp}\n🏅 Level: ${player.level}`;
-      if (outcome.item) replyMsg += `\n🎒 You obtained: ${outcome.item}`;
-      if (levelUpMsg) replyMsg += `\n\n${levelUpMsg}`;
-
-      return message.reply(replyMsg);
-    } else {
-      return message.reply("❌ Invalid choice. Reply with the correct number.");
     }
-  }
+
+    return api.sendMessage(msg, event.threadID);
+  });
 };
