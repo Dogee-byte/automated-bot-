@@ -54,7 +54,7 @@ module.exports.run = async function ({ api, event }) {
     ctx.fillStyle = "#d81b60";
     ctx.font = "bold 32px Sans";
     ctx.textAlign = "center";
-    ctx.fillText("💓 Pair Result 💓", canvas.width / 2, 50);
+    ctx.fillText("❤️ Pair Result ❤️", canvas.width / 2, 50);
 
     const drawCircleImage = (img, x, y, size) => {
       ctx.save();
@@ -83,12 +83,12 @@ module.exports.run = async function ({ api, event }) {
     ctx.fillText(`Compatibility: ${percent}%`, canvas.width / 2, 380);
 
     const quotes = [
-      "😞 Destiny has spoken!",
-      "🙂 Aba! May chemistry kayo!",
+      "❤️ Destiny has spoken!",
+      "❤️ Aba! May chemistry kayo!",
       "❤️ Sparks are flying!",
-      "🤭 Love is in the air!",
-      "🤣 Bagay kayo parang copy at paste!",
-      "😏 The stars have aligned!",
+      "❤️ Love is in the air!",
+      "❤️ Bagay kayo parang copy at paste!",
+      "❤️ The stars have aligned!",
       "😳 Uy, kinikilig ako para sa inyo!"
     ];
     const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
