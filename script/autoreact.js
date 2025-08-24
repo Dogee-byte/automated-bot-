@@ -2,10 +2,10 @@ const fs = require("fs");
 
 module.exports.config = {
   name: "autoreact",
-  version: "1.0.0",
+  version: "3.0.0",
   hasPermssion: 0,
   credits: "Ari",
-  description: "non prefix reply",
+  description: "tite lang",
   commandCategory: "no prefix",
   usages: "noprefix",
   cooldowns: 0
@@ -13,40 +13,60 @@ module.exports.config = {
 
 module.exports.handleEvent = function({ api, event }) {
   if (!event.body) return;
-  let haha = event.body.toLowerCase();
+  const text = event.body.toLowerCase();
 
-  if (haha.includes("lol") || haha.includes("😂") || haha.includes("haha") || haha.includes("pagal") || haha.includes("mental") || haha.includes("oye") || haha.includes("love") || haha.includes("jani") || haha.includes("bc") || haha.includes("busy") || 
-      haha.includes("group") || haha.includes("kis") || haha.includes("kuta") || haha.includes("jan") || haha.includes("oh")) {
-    return api.setMessageReaction("😆", event.messageID, () => {}, true);
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+  const reactions = [
+    { keywords: ["lol","😂","ughh","haha","pagal","mental","oye","love","jani","bc","busy","group","kis","kuta","jan","oh"], emojis: ["😆","🤣","😂"] },
+    { keywords: ["death","mar","udas","☹️","hurt","please","pls","😢","😔","🥺","sad"], emojis: ["😢","😭","🥀"] },
+    { keywords: ["🥵","umah","💋","kiss","babu","baby","wow","wah","relationship","gf","omg"], emojis: ["😘","😍","😚"] }
+  ];
+
+  for (let r of reactions) {
+    if (r.keywords.some(word => text.includes(word))) {
+      return api.setMessageReaction(pick(r.emojis), event.messageID, () => {}, true);
+    }
   }
 
-  if (haha.includes("death") || haha.includes("mar") || haha.includes("udas") || haha.includes("☹️") || haha.includes("hurt") || haha.includes("please") || haha.includes("pls") || haha.includes("😢") || haha.includes("😔") || haha.includes("🥺") || haha.includes("sad")) {
-    return api.setMessageReaction("😢", event.messageID, () => {}, true);
-  }
+  const replies = {
+    "tite": [
+      "Tite ka nang tite, lika dito subuin mo ’to. 🤣",
+      "Puro ka tite, wala nabang ibang laman yang utak mo?",
+      "bad yan"
+    ],
+    "umay": [
+      "Umay talaga, wala kang tatay eh 😏",
+      "Ril",
+      "Umay sayo lods 😓"
+    ],
+    "bot": [
+      "Oo na, bot na. Kinginamo ka",
+      "Tama na, bot lang ako pero mas useful pa rin kesa sayo 🤖",
+      "Pwede tama na kaka-bot nakakarindi na eh!! 😠"
+    ],
+    "burat": [
+      "Si Ari pogi, malake burat 💪",
+      "Tingin ako burat",
+      "Burat means tite diba? tingin nga rate ko lang"
+    ],
+    "kick": [
+      "Ikaw dapat kinikick eh, wala ka namang ambag.",
+      "ikaw dapat kinikick eh wala ka namang dulot sa pinas putanginamo di ka mahal ng magulang mo bobo ka",
+      "sige ganyan ka naman eh, hindi ka na naawa sakin 😞💔"
+    ],
+    "hahaha": [
+      "Tawang-tawa ampota, saksakin ko ngalangala mo 🔪",
+      "Tawa ng nirebound ba yan?",
+      "Happy?"
+    ]
+  };
 
-  if (haha.includes("🥵") || haha.includes("umah") || haha.includes("💋") || haha.includes("kiss") || haha.includes("babu") || haha.includes("baby") || haha.includes("wow") || haha.includes("wah") || haha.includes("relationship") || haha.includes("gf") || haha.includes("omg")) {
-    return api.setMessageReaction("😘", event.messageID, () => {}, true);
-  }
-
-  if (haha.includes("tite")) {
-    return api.sendMessage("tite ka nang tite lika dito subuin moto.", event.threadID, event.messageID);
-  }
-  if (haha.includes("umay")) {
-    return api.sendMessage("Umay talaga wala kang tatay eh", event.threadID, event.messageID);
-  }
-  if (haha.includes("bot")) {
-    return api.sendMessage("oo na bot na kinginamo ka", event.threadID, event.messageID);
-  }
-  if (haha.includes("burat")) {
-    return api.sendMessage("si ari pogi malake burat", event.threadID, event.messageID);
-  }
-  if (haha.includes("kick")) {
-    return api.sendMessage("ikaw dapat kinikick eh wala ka namang dulot sa pinas putanginamo di ka mahal ng magulang mo bobo ka", event.threadID, event.messageID);
-  }
-  if (haha.includes("hahaha")) {
-    return api.sendMessage("tawang tawa ampota saksakin ko ngala-ngala mo", event.threadID, event.messageID);
+  for (let key in replies) {
+    if (text.includes(key)) {
+      return api.sendMessage(pick(replies[key]), event.threadID, event.messageID);
+    }
   }
 };
 
-module.exports.run = function() {
-};
+module.exports.run = () => {};
