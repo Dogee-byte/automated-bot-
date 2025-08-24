@@ -82,16 +82,16 @@ module.exports.handleEvent = function({ api, event }) {
     ]
   };
 
-  if (/^\s*(ha){2,}\s*$/i.test(text)) {
+  if (/\b(ha){2,}\b/i.test(text)) {
     return api.sendMessage(pick(replies["hahaha"]), event.threadID, event.messageID);
   }
-  if (/^\s*(he){2,}\s*$/i.test(text)) {
+  if (/\b(he){2,}\b/i.test(text)) {
     return api.sendMessage(pick(replies["hehehe"]), event.threadID, event.messageID);
   }
-  if (/^\s*(hi){2,}\s*$/i.test(text)) {
+  if (/\b(hi){2,}\b/i.test(text)) {
     return api.sendMessage(pick(replies["hihihi"]), event.threadID, event.messageID);
   }
-  if (/^\s*(hu){2,}\s*$/i.test(text)) {
+  if (/\b(hu){2,}\b/i.test(text)) {
     return api.sendMessage(pick(replies["huhuhu"]), event.threadID, event.messageID);
   }
 
