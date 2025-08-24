@@ -14,12 +14,12 @@ try {
 
 module.exports.config = {
   name: "prefix",
-  version: "1.2.1",
+  version: "2.0.0",
   role: 0,
-  description: "Displays the bot's prefix and a GIF.",
+  description: "Displays the bot's prefix with a random GIF.",
   prefix: true,
   premium: false,
-  credits: "vern",
+  credits: "ari",
   cooldowns: 5,
   category: "info"
 };
@@ -28,8 +28,16 @@ module.exports.run = async function ({ api, event }) {
   const { threadID, messageID } = event;
   const botPrefix = config.prefix || " ";
   const botName = config.botName || "🤖 | 𝙴𝚌𝚑𝚘 𝙰𝙸";
-  const gifUrl = "https://media1.giphy.com/media/v1.Y2lkPTZjMDliOTUyd2xxZGw3NmFtYzhmZDZndm54NHIya240OG45MXZ6Nm02Nmh5cHV6OCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/9jwuxt5bXKadi/giphy.gif";
 
+  const gifList = [
+    "https://media3.giphy.com/media/v1.Y2lkPTZjMDliOTUyNGtwOTdnb2t1dHI4dXJ0bXcyM283dG1nbmxhdm9nZnVvOHM4OGhkaSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/oAvQOD7hJMXQFDDhBI/giphy.gif",
+    "https://media1.giphy.com/media/v1.Y2lkPTZjMDliOTUyaDBsYXN6bmk1bjhydmd2MDc1Mndudmg4eXBweWI4dmx0N3c2b256NiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/9jwuxt5bXKadi/giphy.gif",
+    "https://media2.giphy.com/media/v1.Y2lkPTZjMDliOTUyemYxNThnazlxdHNma2Q1aHZubnpjdGFucDFtemdyZW1sdnRrcXM4bSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ZCSZp478OpzSMpAAFc/giphy.gif",
+    "https://media2.giphy.com/media/v1.Y2lkPTZjMDliOTUyYjJwNDQ0OWN6eDFqdXFyYnBrdTJrMXB5eXhtczR1eXFzYjdjb2pxNiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/DXwyLeoYK7ozTUUOdG/giphy.gif",
+    "https://media1.giphy.com/media/v1.Y2lkPTZjMDliOTUyOWVhNXhpeHY1YXoxcTNoNHl0cWF3ZXBveTJoODc5cG9vZ3J6OWRzeSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/RIpj8HJGVGGTUdM76b/giphy.gif"
+  ];
+
+  const gifUrl = gifList[Math.floor(Math.random() * gifList.length)];
   const tempFilePath = path.join(__dirname, `prefix_${Date.now()}.gif`);
 
   try {
@@ -38,7 +46,7 @@ module.exports.run = async function ({ api, event }) {
       method: "GET",
       responseType: "stream"
     });
-    
+
     const writer = fs.createWriteStream(tempFilePath);
     response.data.pipe(writer);
 
@@ -61,6 +69,6 @@ module.exports.run = async function ({ api, event }) {
     console.error("Error in prefix command:", error);
     api.sendMessage("⚠️ Failed to fetch or send the GIF.", threadID, messageID);
   } finally {
-    unlinkAsync(tempFilePath).catch(e => {/* ignore */});
+    unlinkAsync(tempFilePath).catch(e => {});
   }
 };
