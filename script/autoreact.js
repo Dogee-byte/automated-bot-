@@ -18,7 +18,7 @@ module.exports.handleEvent = function({ api, event }) {
   const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 
   const reactions = [
-    { keywords: ["lol","😂","ughh","haha","pagal","mental","oye","love","jani","bc","busy","group","kis","kuta","jan","oh"], emojis: ["😆","🤣","😂"] },
+    { keywords: ["lol","😂","ughh","pagal","mental","oye","love","jani","bc","busy","group","kis","kuta","jan","oh"], emojis: ["😆","🤣","😂"] },
     { keywords: ["death","mar","udas","☹️","hurt","please","pls","😢","😔","🥺","sad"], emojis: ["😢","😭","🥀"] },
     { keywords: ["🥵","umah","💋","kiss","babu","baby","wow","wah","relationship","gf","omg"], emojis: ["😘","😍","😚"] }
   ];
