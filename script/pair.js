@@ -5,10 +5,10 @@ const axios = require("axios");
 
 module.exports.config = {
   name: "pair",
-  version: "3.0.6",
+  version: "3.0.2",
   role: 0,
   credits: "ARI",
-  description: "Randomly pairs you with someone in the group (with profile pics and emojis on canvas)",
+  description: "Randomly pairs you with someone in the group (with profile pics on canvas)",
   aliases: ["ship", "partner"],
   cooldown: 5,
 };
@@ -35,12 +35,11 @@ module.exports.run = async function ({ api, event }) {
 
     const percent = Math.floor(Math.random() * 101);
 
-    // Helper to get avatar
     const getAvatar = async (uid) => {
       const url = `https://graph.facebook.com/${uid}/picture?height=300&width=300&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
       const response = await axios.get(url, { responseType: "arraybuffer" });
-      const buffer = Buffer.from(response.data, "binary");
-      return await loadImage(`data:image/png;base64,${buffer.toString("base64")}`);
+      const imageBuffer = Buffer.from(response.data, "binary");
+      return await loadImage(`data:image/png;base64,${imageBuffer.toString("base64")}`);
     };
 
     const avatar1 = await getAvatar(senderID);
@@ -52,10 +51,15 @@ module.exports.run = async function ({ api, event }) {
     ctx.fillStyle = "#ffe4ec";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    ctx.fillStyle = "#d81b60";
+    ctx.font = "bold 32px Sans";
+    ctx.textAlign = "center";
+    ctx.fillText("💓 Pair Result 💓", canvas.width / 2, 50);
+
     const drawCircleImage = (img, x, y, size) => {
       ctx.save();
       ctx.beginPath();
-      ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
+      ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2, true);
       ctx.closePath();
       ctx.clip();
       ctx.drawImage(img, x, y, size, size);
@@ -65,83 +69,34 @@ module.exports.run = async function ({ api, event }) {
     drawCircleImage(avatar1, 100, 120, 180);
     drawCircleImage(avatar2, 420, 120, 180);
 
-    const emojiToURL = (emoji) => {
-      const codePoint = Array.from(emoji).map(c => c.codePointAt(0).toString(16)).join('-');
-      return `https://twemoji.maxcdn.com/v/latest/72x72/${codePoint}.png`;
-    };
-
-    const drawEmoji = async (ctx, emoji, x, y, size) => {
-      try {
-        const url = emojiToURL(emoji);
-        const img = await loadImage(url);
-        ctx.drawImage(img, x, y, size, size);
-      } catch (e) {
-        console.log("Emoji load failed:", emoji, e.message);
-      }
-    };
-
-    ctx.fillStyle = "#000";
-    ctx.font = "bold 32px Sans";
-    ctx.textAlign = "center";
-    
-    ctx.fillText("Pair Result", canvas.width / 2, 80);
-    
-    const textWidth = ctx.measureText("Pair Result").width;
-
-    await drawEmoji(ctx, "💞", canvas.width / 2 - textWidth / 2 - 30, 80 - 40, 50); 
-    await drawEmoji(ctx, "💞", canvas.width / 2 + textWidth / 2 + 30, 80 - 40, 50); 
-
-    await drawEmoji(ctx, "❤️", canvas.width / 2 - 40, 200, 80);
+    ctx.fillStyle = "#e91e63";
+    ctx.font = "80px Sans";
+    ctx.fillText("❤️", canvas.width / 2, 220);
 
     ctx.fillStyle = "#000";
     ctx.font = "22px Sans";
-    ctx.fillText(name1, 190, 340);
-    ctx.fillText(name2, 490, 340);
+    ctx.fillText(`${name1}`, 190, 340);
+    ctx.fillText(`${name2}`, 490, 340);
 
     ctx.fillStyle = "#880e4f";
     ctx.font = "bold 30px Sans";
     ctx.fillText(`Compatibility: ${percent}%`, canvas.width / 2, 380);
 
     const quotes = [
-      "💘 Destiny has spoken!",
-      "😂 Aba! May chemistry kayo!",
-      "🔥 Sparks are flying!",
-      "🌹 Love is in the air!",
+      "😞 Destiny has spoken!",
+      "🙂 Aba! May chemistry kayo!",
+      "❤️ Sparks are flying!",
+      "🤭 Love is in the air!",
       "🤣 Bagay kayo parang copy at paste!",
-      "✨ The stars have aligned!",
+      "😏 The stars have aligned!",
       "😳 Uy, kinikilig ako para sa inyo!"
     ];
     const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
 
-    const measureQuoteWidth = (quote, ctx, emojiSize = 24) => {
-      let width = 0;
-      for (const char of quote) {
-        if (/\p{Emoji}/u.test(char)) width += emojiSize;
-        else width += ctx.measureText(char).width;
-      }
-      return width;
-    };
-    
-    const drawQuoteCentered = async (ctx, quote, y, canvasWidth) => {
-      const emojiSize = 24;
-      const totalWidth = measureQuoteWidth(quote, ctx, emojiSize);
-      let x = (canvasWidth - totalWidth) / 2;
+    ctx.fillStyle = "#4a148c";
+    ctx.font = "18px Sans";
+    ctx.fillText(randomQuote, canvas.width / 2, 100);
 
-      for (const char of quote) {
-        if (/\p{Emoji}/u.test(char)) {
-          await drawEmoji(ctx, char, x, y - 20, emojiSize);
-          x += emojiSize;
-        } else {
-          ctx.fillStyle = "#4a148c";
-          ctx.font = "18px Sans";
-          ctx.fillText(char, x, y);
-          x += ctx.measureText(char).width;
-        }
-      }
-    };
-
-    await drawQuoteCentered(ctx, randomQuote, 120, canvas.width);
-    
     const filePath = path.join(__dirname, "pair.png");
     const out = fs.createWriteStream(filePath);
     const stream = canvas.createPNGStream();
