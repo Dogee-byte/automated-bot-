@@ -2,7 +2,7 @@ const fs = require("fs");
 
 module.exports.config = {
   name: "autoreact",
-  version: "3.2.1",
+  version: "3.2.2",
   hasPermssion: 0,
   credits: "Ari",
   description: "autoreact replies",
@@ -63,8 +63,8 @@ module.exports.handleEvent = function({ api, event }) {
   };
 
   if (
-    /^(ha){2,}$/i.test(text) ||          
-    /\b(he){2,}\b/i.test(text) ||       
+    /(ha){2,}/i.test(text) ||       
+    /\b(he){2,}\b/i.test(text) ||    
     text.includes("😂") || 
     text.includes("🤣")
   ) {
