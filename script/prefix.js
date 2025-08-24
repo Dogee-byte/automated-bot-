@@ -19,7 +19,7 @@ module.exports.config = {
   description: "Displays the bot's prefix and a GIF.",
   prefix: true,
   premium: false,
-  credits: "vern",
+  credits: "ari",
   cooldowns: 5,
   category: "info"
 };
@@ -28,7 +28,7 @@ module.exports.run = async function ({ api, event }) {
   const { threadID, messageID } = event;
   const botPrefix = config.prefix || " ";
   const botName = config.botName || "🤖 | 𝙴𝚌𝚑𝚘 𝙰𝙸";
-  const gifUrl = "https://media2.giphy.com/media/v1.Y2lkPTZjMDliOTUyc2FyazdsM3R2a3U2dDNsaGpzcDZ1M3d5cGxheGdrZHI2M2RvZ2xlcyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/uBTWyINWTrWz6/giphy.gif";
+  const gifUrl = "https://i.imgur.com/5vOXjee.gif"; 
 
   const tempFilePath = path.join(__dirname, `prefix_${Date.now()}.gif`);
 
@@ -39,7 +39,6 @@ module.exports.run = async function ({ api, event }) {
       responseType: "stream"
     });
 
-    // Save GIF to temp file
     const writer = fs.createWriteStream(tempFilePath);
     response.data.pipe(writer);
 
@@ -48,7 +47,6 @@ module.exports.run = async function ({ api, event }) {
       writer.on("error", reject);
     });
 
-    // Send the message with GIF attachment
     await new Promise((resolve, reject) => {
       api.sendMessage({
         body: `🤖 𝗕𝗼𝘁 𝗜𝗻𝗳𝗼𝗿𝗺𝗮𝘁𝗶𝗼𝗻\n📌 𝗣𝗿𝗲𝗳𝗶𝘅: ${botPrefix}\n🆔 𝗕𝗼𝘁 𝗡𝗮𝗺𝗲: ${botName}\n\n🙏 𝗧𝗵𝗮𝗻𝗸𝘀 𝗳𝗼𝗿 𝘂𝘀𝗶𝗻𝗴 𝗺𝘆 𝗯𝗼𝘁!`,
@@ -63,7 +61,6 @@ module.exports.run = async function ({ api, event }) {
     console.error("Error in prefix command:", error);
     api.sendMessage("⚠️ Failed to fetch or send the GIF.", threadID, messageID);
   } finally {
-    // Clean up the temp file asynchronously
-    unlinkAsync(tempFilePath).catch(e => {/* ignore */});
+    unlinkAsync(tempFilePath).catch(e => {});
   }
 };
