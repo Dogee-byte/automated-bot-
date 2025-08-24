@@ -2,7 +2,7 @@ const fs = require("fs");
 
 module.exports.config = {
   name: "autoreact",
-  version: "3.2.2",
+  version: "3.3.0",
   hasPermssion: 0,
   credits: "Ari",
   description: "autoreact replies",
@@ -17,6 +17,7 @@ module.exports.handleEvent = function({ api, event }) {
 
   const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 
+  // 🔥 reactions (emoji lang)
   const reactions = [
     { keywords: ["lol","😂","ughh","haha","pagal","mental","oye","love","jani","bc","busy","group","kis","kuta","jan","oh"], emojis: ["😆","🤣","😂"] },
     { keywords: ["death","mar","udas","☹️","hurt","please","pls","😢","😔","🥺","sad"], emojis: ["😢","😭","🥀"] },
@@ -29,6 +30,7 @@ module.exports.handleEvent = function({ api, event }) {
     }
   }
 
+  // 🔥 replies (text messages)
   const replies = {
     "tite": [
       "Tite ka nang tite, lika dito subuin mo ’to. 🤣",
@@ -59,15 +61,38 @@ module.exports.handleEvent = function({ api, event }) {
       "Tawang-tawa ampota, saksakin ko ngalangala mo 🔪",
       "Tawa ng nirebound ba yan?",
       "Happy?"
+    ],
+    "hehehe": [
+      "Hehe parang may tinatago ka lods 😏",
+      "Seryoso ka ba o nang-aasar ka lang? 🤨",
+      "Hehehe cute 😂"
+    ],
+    "hihihi": [
+      "inlove ba ito?",
+      "Hihihi landi ah 🤭",
+      "Nakaka-kilig naman yang hihihi mo 😍"
+    ],
+    "huhuhu": [
+      "Huhuhu parang si Santa Claus ah 🎅",
+      "Biglang nag-Christmas vibes oh 😂",
+      "iyak ba yan? 🤔"
     ]
   };
 
-  if (
-    /(ha){2,}/i.test(text) ||       
-    /\b(he){2,}\b/i.test(text) ||    
-    text.includes("😂") || 
-    text.includes("🤣")
-  ) {
+  if (/\b(ha){2,}\b/i.test(text)) {
+    return api.sendMessage(pick(replies["hahaha"]), event.threadID, event.messageID);
+  }
+  if (/\b(he){2,}\b/i.test(text)) {
+    return api.sendMessage(pick(replies["hehehe"]), event.threadID, event.messageID);
+  }
+  if (/\b(hi){2,}\b/i.test(text)) {
+    return api.sendMessage(pick(replies["hihihi"]), event.threadID, event.messageID);
+  }
+  if (/\b(ho){2,}\b/i.test(text)) {
+    return api.sendMessage(pick(replies["hohoho"]), event.threadID, event.messageID);
+  }
+
+  if (text.includes("😂") || text.includes("🤣")) {
     return api.sendMessage(pick(replies["hahaha"]), event.threadID, event.messageID);
   }
 
