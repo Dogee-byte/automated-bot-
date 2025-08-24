@@ -4,7 +4,7 @@ module.exports.config = {
   name: "autoreact",
   version: "1.0.0",
   hasPermssion: 0,
-  credits: "Minami Tatsuo",
+  credits: "Ari",
   description: "non prefix reply",
   commandCategory: "no prefix",
   usages: "noprefix",
@@ -42,6 +42,9 @@ module.exports.handleEvent = function({ api, event }) {
   }
   if (haha.includes("kick")) {
     return api.sendMessage("ikaw dapat kinikick eh wala ka namang dulot sa pinas putanginamo di ka mahal ng magulang mo bobo ka", event.threadID, event.messageID);
+  }
+  if (haha.includes("hahaha")) {
+    return api.sendMessage("tawang tawa ampota saksakin ko ngala-ngala mo", event.threadID, event.messageID);
   }
 };
 
