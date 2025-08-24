@@ -2,7 +2,7 @@ const fs = require("fs");
 
 module.exports.config = {
   name: "autoreact",
-  version: "3.3.0",
+  version: "3.4.0",
   hasPermssion: 0,
   credits: "Ari",
   description: "autoreact replies",
@@ -41,9 +41,14 @@ module.exports.handleEvent = function({ api, event }) {
       "Umay sayo lods 😓"
     ],
     "bot": [
-      "Oo na, bot na. Kinginamo ka",
+      "Oo na, bot na kinginamo ka",
       "Tama na, bot lang ako pero mas useful pa rin kesa sayo 🤖",
       "Pwede tama na kaka-bot nakakarindi na eh!! 😠"
+    ],
+    "robot": [
+      "Sino tinatawag mong robot ha? 🤨",
+      "ANOOOOOOOO!!?",
+      "Robot? 🫤"
     ],
     "burat": [
       "Si Ari pogi, malake burat 💪",
@@ -66,28 +71,28 @@ module.exports.handleEvent = function({ api, event }) {
       "Hehehe cute 😂"
     ],
     "hihihi": [
-      "inlove ba ito?",
+      "Inlove ba ito?",
       "Hihihi landi ah 🤭",
       "Nakaka-kilig naman yang hihihi mo 😍"
     ],
     "huhuhu": [
       "Huhuhu parang si Santa Claus ah 🎅",
       "Biglang nag-Christmas vibes oh 😂",
-      "iyak ba yan? 🤔"
+      "Iyak ba yan? 🤔"
     ]
   };
 
-  if (/\b(ha){2,}\b/i.test(text)) {
+  if (/^\s*(ha){2,}\s*$/i.test(text)) {
     return api.sendMessage(pick(replies["hahaha"]), event.threadID, event.messageID);
   }
-  if (/\b(he){2,}\b/i.test(text)) {
+  if (/^\s*(he){2,}\s*$/i.test(text)) {
     return api.sendMessage(pick(replies["hehehe"]), event.threadID, event.messageID);
   }
-  if (/\b(hi){2,}\b/i.test(text)) {
+  if (/^\s*(hi){2,}\s*$/i.test(text)) {
     return api.sendMessage(pick(replies["hihihi"]), event.threadID, event.messageID);
   }
-  if (/\b(ho){2,}\b/i.test(text)) {
-    return api.sendMessage(pick(replies["hohoho"]), event.threadID, event.messageID);
+  if (/^\s*(hu){2,}\s*$/i.test(text)) {
+    return api.sendMessage(pick(replies["huhuhu"]), event.threadID, event.messageID);
   }
 
   if (text.includes("😂") || text.includes("🤣")) {
@@ -95,7 +100,8 @@ module.exports.handleEvent = function({ api, event }) {
   }
 
   for (let key in replies) {
-    if (text.includes(key)) {
+    let regex = new RegExp(`\\b${key}\\b`, "i"); 
+    if (regex.test(text)) {
       return api.sendMessage(pick(replies[key]), event.threadID, event.messageID);
     }
   }
