@@ -2,7 +2,7 @@ const fs = require("fs");
 
 module.exports.config = {
   name: "autoreact",
-  version: "3.4.0",
+  version: "3.6.0",
   hasPermssion: 0,
   credits: "Ari",
   description: "autoreact replies",
@@ -30,77 +30,37 @@ module.exports.handleEvent = function({ api, event }) {
   }
 
   const replies = {
-    "tite": [
-      "Tite ka nang tite, lika dito subuin mo ’to. 🤣",
-      "Puro ka tite, wala nabang ibang laman yang utak mo?",
-      "bad yan"
-    ],
-    "umay": [
-      "Umay talaga, wala kang tatay eh 😏",
-      "Ril",
-      "Umay sayo lods 😓"
-    ],
-    "bot": [
-      "Oo na, bot na kinginamo ka",
-      "Tama na, bot lang ako pero mas useful pa rin kesa sayo 🤖",
-      "Pwede tama na kaka-bot nakakarindi na eh!! 😠"
-    ],
-    "robot": [
-      "Sino tinatawag mong robot ha? 🤨",
-      "ANOOOOOOOO!!?",
-      "Robot? 🫤"
-    ],
-    "burat": [
-      "Si Ari pogi, malake burat 💪",
-      "Tingin ako burat",
-      "Burat means tite diba? tingin nga rate ko lang"
-    ],
-    "kick": [
-      "Ikaw dapat kinikick eh, wala ka namang ambag.",
-      "ikaw dapat kinikick eh wala ka namang dulot sa pinas putanginamo di ka mahal ng magulang mo bobo ka",
-      "sige ganyan ka naman eh, hindi ka na naawa sakin 😞💔"
-    ],
-    "hahaha": [
-      "Tawang-tawa ampota, saksakin ko ngalangala mo 🔪",
-      "Tawa ng nirebound ba yan?",
-      "Happy?"
-    ],
-    "hehehe": [
-      "Hehe parang may tinatago ka lods 😏",
-      "Seryoso ka ba o nang-aasar ka lang? 🤨",
-      "Hehehe cute 😂"
-    ],
-    "hihihi": [
-      "Inlove ba ito?",
-      "Hihihi landi ah 🤭",
-      "Nakaka-kilig naman yang hihihi mo 😍"
-    ],
-    "huhuhu": [
-      "Huhuhu parang si Santa Claus ah 🎅",
-      "Biglang nag-Christmas vibes oh 😂",
-      "Iyak ba yan? 🤔"
-    ]
+    "tite": ["Tite ka nang tite, lika dito subuin mo ’to. 🤣", "Puro ka tite, wala nabang ibang laman yang utak mo?", "bad yan"],
+    "umay": ["Umay talaga, wala kang tatay eh 😏", "Ril", "Umay sayo lods 😓"],
+    "bot": ["Oo na, bot na. Kinginamo ka", "Tama na, bot lang ako pero mas useful pa rin kesa sayo 🤖", "Pwede tama na kaka-bot nakakarindi na eh!! 😠"],
+    "robot": ["Sino tinatawag mong robot ha? 🤖", "Oo robot ako, pero mas may puso pa rin kesa sayo 😏", "Robot? buti pa ako hindi napapagod 😎"],
+    "burat": ["Si Ari pogi, malake burat 💪", "Tingin ako burat", "Burat means tite diba? tingin nga rate ko lang"],
+    "kick": ["Ikaw dapat kinikick eh, wala ka namang ambag.", "ikaw dapat kinikick eh wala ka namang dulot sa pinas putanginamo di ka mahal ng magulang mo bobo ka", "sige ganyan ka naman eh, hindi ka na naawa sakin 😞💔"],
+    "hahaha": ["Tawang-tawa ampota, saksakin ko ngalangala mo 🔪", "Tawa ng nirebound ba yan?", "Happy?"],
+    "hehehe": ["Hehe parang may tinatago ka lods 😏", "Seryoso ka ba o nang-aasar ka lang? 🤨", "Hehehe cute 😂"],
+    "hihihi": ["Inlove ba ito?", "Hihihi landi ah 🤭", "Nakaka-kilig naman yang hihihi mo 😍"],
+    "huhuhu": ["Huhuhu parang si Santa Claus ah 🎅", "Biglang nag-Christmas vibes oh 😂", "Iyak ba yan? 🤔"]
   };
 
-  if (/\b(ha){2,}\b/i.test(text)) {
+  if (/\b(h[^\s]*){2,}\b/i.test(text)) {
     return api.sendMessage(pick(replies["hahaha"]), event.threadID, event.messageID);
   }
-  if (/\b(he){2,}\b/i.test(text)) {
+  if (/\b(he[^\s]*){2,}\b/i.test(text)) {
     return api.sendMessage(pick(replies["hehehe"]), event.threadID, event.messageID);
   }
-  if (/\b(hi){2,}\b/i.test(text)) {
+  if (/\b(hi[^\s]*){2,}\b/i.test(text)) {
     return api.sendMessage(pick(replies["hihihi"]), event.threadID, event.messageID);
   }
-  if (/\b(hu){2,}\b/i.test(text)) {
+  if (/\b(hu[^\s]*){2,}\b/i.test(text)) {
     return api.sendMessage(pick(replies["huhuhu"]), event.threadID, event.messageID);
   }
-
+  
   if (text.includes("😂") || text.includes("🤣")) {
     return api.sendMessage(pick(replies["hahaha"]), event.threadID, event.messageID);
   }
 
   for (let key in replies) {
-    let regex = new RegExp(`\\b${key}\\b`, "i"); 
+    let regex = new RegExp(`\\b${key}\\b`, "i");
     if (regex.test(text)) {
       return api.sendMessage(pick(replies[key]), event.threadID, event.messageID);
     }
