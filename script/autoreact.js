@@ -42,7 +42,7 @@ module.exports.handleEvent = function({ api, event }) {
     "huhuhu": ["Huhuhu parang si Santa Claus ah 🎅", "Biglang nag-Christmas vibes oh 😂", "Iyak ba yan? 🤔"]
   };
 
-  if (/\b(h[^\s]*){2,}\b/i.test(text)) {
+  if (/\b(ha[^\s]*){2,}\b/i.test(text)) {
     return api.sendMessage(pick(replies["hahaha"]), event.threadID, event.messageID);
   }
   if (/\b(he[^\s]*){2,}\b/i.test(text)) {
