@@ -19,7 +19,7 @@ module.exports.config = {
   description: "Displays the bot's prefix and a GIF.",
   prefix: true,
   premium: false,
-  credits: "ari",
+  credits: "vern",
   cooldowns: 5,
   category: "info"
 };
@@ -28,7 +28,7 @@ module.exports.run = async function ({ api, event }) {
   const { threadID, messageID } = event;
   const botPrefix = config.prefix || " ";
   const botName = config.botName || "🤖 | 𝙴𝚌𝚑𝚘 𝙰𝙸";
-  const gifUrl = "https://i.imgur.com/5vOXjee.gif"; 
+  const gifUrl = "https://media1.giphy.com/media/v1.Y2lkPTZjMDliOTUyd2xxZGw3NmFtYzhmZDZndm54NHIya240OG45MXZ6Nm02Nmh5cHV6OCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/9jwuxt5bXKadi/giphy.gif";
 
   const tempFilePath = path.join(__dirname, `prefix_${Date.now()}.gif`);
 
@@ -38,7 +38,7 @@ module.exports.run = async function ({ api, event }) {
       method: "GET",
       responseType: "stream"
     });
-
+    
     const writer = fs.createWriteStream(tempFilePath);
     response.data.pipe(writer);
 
@@ -61,6 +61,6 @@ module.exports.run = async function ({ api, event }) {
     console.error("Error in prefix command:", error);
     api.sendMessage("⚠️ Failed to fetch or send the GIF.", threadID, messageID);
   } finally {
-    unlinkAsync(tempFilePath).catch(e => {});
+    unlinkAsync(tempFilePath).catch(e => {/* ignore */});
   }
 };
