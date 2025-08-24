@@ -2,10 +2,10 @@ const fs = require("fs");
 
 module.exports.config = {
   name: "autoreact",
-  version: "3.0.0",
+  version: "3.2.0",
   hasPermssion: 0,
   credits: "Ari",
-  description: "tite lang",
+  description: "autoreact replies",
   commandCategory: "no prefix",
   usages: "noprefix",
   cooldowns: 0
@@ -41,7 +41,7 @@ module.exports.handleEvent = function({ api, event }) {
       "Umay sayo lods 😓"
     ],
     "bot": [
-      "Oo na, bot na. Kinginamo ka",
+      "Oo na, bot na kinginamo ka",
       "Tama na, bot lang ako pero mas useful pa rin kesa sayo 🤖",
       "Pwede tama na kaka-bot nakakarindi na eh!! 😠"
     ],
@@ -61,6 +61,15 @@ module.exports.handleEvent = function({ api, event }) {
       "Happy?"
     ]
   };
+
+  if (
+    /\b(ha){2,}\b/i.test(text) ||      
+    /\b(he){2,}\b/i.test(text) ||               
+    text.includes("😂") || 
+    text.includes("🤣")
+  ) {
+    return api.sendMessage(pick(replies["hahaha"]), event.threadID, event.messageID);
+  }
 
   for (let key in replies) {
     if (text.includes(key)) {
