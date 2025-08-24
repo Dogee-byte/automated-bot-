@@ -17,7 +17,6 @@ module.exports.handleEvent = function({ api, event }) {
 
   const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 
-  // 🔥 reactions (emoji lang)
   const reactions = [
     { keywords: ["lol","😂","ughh","haha","pagal","mental","oye","love","jani","bc","busy","group","kis","kuta","jan","oh"], emojis: ["😆","🤣","😂"] },
     { keywords: ["death","mar","udas","☹️","hurt","please","pls","😢","😔","🥺","sad"], emojis: ["😢","😭","🥀"] },
@@ -30,7 +29,6 @@ module.exports.handleEvent = function({ api, event }) {
     }
   }
 
-  // 🔥 replies (text messages)
   const replies = {
     "tite": [
       "Tite ka nang tite, lika dito subuin mo ’to. 🤣",
