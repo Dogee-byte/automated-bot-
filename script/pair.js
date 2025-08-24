@@ -2,13 +2,14 @@ const { createCanvas, loadImage } = require("canvas");
 const fs = require("fs");
 const path = require("path");
 const axios = require("axios");
+const twemoji = require("twemoji");
 
 module.exports.config = {
   name: "pair",
-  version: "3.0.2",
+  version: "3.0.3",
   role: 0,
   credits: "ARI",
-  description: "Randomly pairs you with someone in the group (with profile pics on canvas)",
+  description: "Randomly pairs you with someone in the group (with profile pics and emojis on canvas)",
   aliases: ["ship", "partner"],
   cooldown: 5,
 };
@@ -51,10 +52,19 @@ module.exports.run = async function ({ api, event }) {
     ctx.fillStyle = "#ffe4ec";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.fillStyle = "#d81b60";
+    ctx.fillStyle = "#000";
     ctx.font = "bold 32px Sans";
     ctx.textAlign = "center";
-    ctx.fillText("💞 Pair Result 💞", canvas.width / 2, 50);
+
+    const drawEmoji = async (ctx, emoji, x, y, size) => {
+      const url = twemoji.parse(emoji, { folder: "72x72", ext: ".png" }).match(/src="([^"]+)"/)[1];
+      const img = await loadImage(url);
+      ctx.drawImage(img, x, y, size, size);
+    };
+
+    await drawEmoji(ctx, "💞", canvas.width / 2 - 40, 10, 50);
+    await drawEmoji(ctx, "💞", canvas.width / 2 + 10, 10, 50);
+    ctx.fillText("Pair Result", canvas.width / 2, 80);
 
     const drawCircleImage = (img, x, y, size) => {
       ctx.save();
@@ -69,9 +79,7 @@ module.exports.run = async function ({ api, event }) {
     drawCircleImage(avatar1, 100, 120, 180);
     drawCircleImage(avatar2, 420, 120, 180);
 
-    ctx.fillStyle = "#e91e63";
-    ctx.font = "80px Sans";
-    ctx.fillText("❤️", canvas.width / 2, 220);
+    await drawEmoji(ctx, "❤️", canvas.width / 2 - 40, 200, 80);
 
     ctx.fillStyle = "#000";
     ctx.font = "22px Sans";
@@ -93,9 +101,17 @@ module.exports.run = async function ({ api, event }) {
     ];
     const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
 
-    ctx.fillStyle = "#4a148c";
-    ctx.font = "18px Sans";
-    ctx.fillText(randomQuote, canvas.width / 2, 100);
+    const splitQuote = randomQuote.split(/([\u{1F300}-\u{1FAFF}])/u); 
+    let quoteX = canvas.width / 2 - 100;
+    for (let part of splitQuote) {
+      if (part.match(/[\u{1F300}-\u{1FAFF}]/u)) {
+        await drawEmoji(ctx, part, quoteX, 100, 24);
+        quoteX += 30;
+      } else {
+        ctx.fillText(part, quoteX + 15, 120);
+        quoteX += ctx.measureText(part).width;
+      }
+    }
 
     const filePath = path.join(__dirname, "pair.png");
     const out = fs.createWriteStream(filePath);
