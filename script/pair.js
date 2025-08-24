@@ -5,7 +5,7 @@ const axios = require("axios");
 
 module.exports.config = {
   name: "pair",
-  version: "3.0.5",
+  version: "3.0.6",
   role: 0,
   credits: "ARI",
   description: "Randomly pairs you with someone in the group (with profile pics and emojis on canvas)",
@@ -35,6 +35,7 @@ module.exports.run = async function ({ api, event }) {
 
     const percent = Math.floor(Math.random() * 101);
 
+    // Helper to get avatar
     const getAvatar = async (uid) => {
       const url = `https://graph.facebook.com/${uid}/picture?height=300&width=300&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
       const response = await axios.get(url, { responseType: "arraybuffer" });
@@ -78,14 +79,17 @@ module.exports.run = async function ({ api, event }) {
         console.log("Emoji load failed:", emoji, e.message);
       }
     };
-    
-    await drawEmoji(ctx, "💞", canvas.width / 2 - 40, 10, 50);
-    await drawEmoji(ctx, "💞", canvas.width / 2 + 10, 10, 50);
 
     ctx.fillStyle = "#000";
     ctx.font = "bold 32px Sans";
     ctx.textAlign = "center";
+    
     ctx.fillText("Pair Result", canvas.width / 2, 80);
+    
+    const textWidth = ctx.measureText("Pair Result").width;
+
+    await drawEmoji(ctx, "💞", canvas.width / 2 - textWidth / 2 - 30, 80 - 40, 50); 
+    await drawEmoji(ctx, "💞", canvas.width / 2 + textWidth / 2 + 30, 80 - 40, 50); 
 
     await drawEmoji(ctx, "❤️", canvas.width / 2 - 40, 200, 80);
 
@@ -109,20 +113,35 @@ module.exports.run = async function ({ api, event }) {
     ];
     const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
 
-    let quoteX = 50;
-    const quoteY = 120;
-    for (const char of randomQuote) {
-      if (/\p{Emoji}/u.test(char)) {
-        await drawEmoji(ctx, char, quoteX, quoteY - 20, 24);
-        quoteX += 30;
-      } else {
-        ctx.fillStyle = "#4a148c";
-        ctx.font = "18px Sans";
-        ctx.fillText(char, quoteX, quoteY);
-        quoteX += ctx.measureText(char).width;
+    const measureQuoteWidth = (quote, ctx, emojiSize = 24) => {
+      let width = 0;
+      for (const char of quote) {
+        if (/\p{Emoji}/u.test(char)) width += emojiSize;
+        else width += ctx.measureText(char).width;
       }
-    }
+      return width;
+    };
+    
+    const drawQuoteCentered = async (ctx, quote, y, canvasWidth) => {
+      const emojiSize = 24;
+      const totalWidth = measureQuoteWidth(quote, ctx, emojiSize);
+      let x = (canvasWidth - totalWidth) / 2;
 
+      for (const char of quote) {
+        if (/\p{Emoji}/u.test(char)) {
+          await drawEmoji(ctx, char, x, y - 20, emojiSize);
+          x += emojiSize;
+        } else {
+          ctx.fillStyle = "#4a148c";
+          ctx.font = "18px Sans";
+          ctx.fillText(char, x, y);
+          x += ctx.measureText(char).width;
+        }
+      }
+    };
+
+    await drawQuoteCentered(ctx, randomQuote, 120, canvas.width);
+    
     const filePath = path.join(__dirname, "pair.png");
     const out = fs.createWriteStream(filePath);
     const stream = canvas.createPNGStream();
