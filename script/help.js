@@ -1,121 +1,105 @@
 module.exports.config = {
-    name: 'help',
-    version: '1.0.0',
-    role: 0,
-    hasPrefix: false,
-    aliases: ['help'],
-    description: "Beginner's guide",
-    usage: "Help [page] or [command]",
-    credits: 'ARI',
+        name: 'help',
+        version: '1.0.1',
+        role: 0,
+        hasPrefix: false,
+        aliases: ['help'],
+        description: "Beginner's guide",
+        usage: "Help [page] or [command]",
+        credits: 'ARI',
 };
 
-module.exports.run = async function({
-    api,
-    event,
-    enableCommands,
-    args,
-    Utils,
-    prefix
+module.exports.run = async function ({
+        api,
+        event,
+        enableCommands,
+        args,
+        Utils,
+        prefix
 }) {
-    const input = args.join(' ');
-    try {
-        const eventCommands = enableCommands[1].handleEvent;
-        const commands = enableCommands[0].commands;
+        const input = args[0];
+        try {
+                const eventCommands = enableCommands[1].handleEvent;
+                const commands = enableCommands[0].commands;
 
-        if (!input) {
-            const pages = 999;
-            let page = 1;
-            let start = (page - 1) * pages;
-            let end = start + pages;
+                const perPage = 10;
+                const totalPages = Math.ceil(commands.length / perPage);
+                const page = !isNaN(input) ? Math.max(1, Math.min(parseInt(input), totalPages)) : 1;
+                const start = (page - 1) * perPage;
+                const end = start + perPage;
 
-            let helpMessage = `✦ ━━ ✦ 𝑩𝑶𝑻 𝑯𝑬𝑳𝑷 ✦ ━━ ✦\n\n📜 Command List 📜\n\n`;
+                if (!input || !isNaN(input)) {
+                        let helpMessage = `✦ ━━ ✦ 𝑩𝑶𝑻 𝑯𝑬𝑳𝑷 ✦ ━━ ✦\n\n`;
+                        helpMessage += `📜 Command List (Page ${page}/${totalPages}) 📜\n\n`;
 
-            for (let i = start; i < Math.min(end, commands.length); i++) {
-                helpMessage += `╭〔${i + 1}〕 ${prefix}${commands[i]}\n╰───────────────\n`;
-            }
+                        for (let i = start; i < Math.min(end, commands.length); i++) {
+                                helpMessage += `╭〔${i + 1}〕 ${prefix}${commands[i]}\n╰───────────────\n`;
+                        }
 
-            helpMessage += `\n🎯 Event List 🎯\n\n`;
-            eventCommands.forEach((eventCommand, index) => {
-                helpMessage += `╭〔${index + 1}〕 ${prefix}${eventCommand}\n╰───────────────\n`;
-            });
+                        helpMessage += `\n➡️ Type: ${prefix}help [page] to view other pages\n`;
+                        helpMessage += `➡️ Type: ${prefix}help [command] for details`;
 
-            helpMessage += `\n✦ Page ${page}/${Math.ceil(commands.length / pages)} ✦\n`;
-            helpMessage += `Type: ${prefix}help [page] | ${prefix}help [command]`;
+                        if (page === 1 && eventCommands.length) {
+                                helpMessage += `\n\n📌 Event List:\n`;
+                                eventCommands.forEach((eventCommand, index) => {
+                                        helpMessage += `╭〔E${index + 1}〕 ${prefix}${eventCommand}\n╰───────────────\n`;
+                                });
+                        }
 
-            api.sendMessage(helpMessage, event.threadID, event.messageID);
+                        return api.sendMessage(helpMessage, event.threadID, event.messageID);
+                } else {
+                        const command = [...Utils.handleEvent, ...Utils.commands].find(([key]) =>
+                                key.includes(input?.toLowerCase())
+                        )?.[1];
 
-        } else if (!isNaN(input)) {
-            const page = parseInt(input);
-            const pages = 999;
-            let start = (page - 1) * pages;
-            let end = start + pages;
+                        if (command) {
+                                const {
+                                        name,
+                                        version,
+                                        role,
+                                        aliases = [],
+                                        description,
+                                        usage,
+                                        credits,
+                                        cooldown,
+                                        hasPrefix
+                                } = command;
 
-            let helpMessage = `✦ ━━ ✦ Command List ✦ ━━ ✦\n\n`;
+                                const roleMessage =
+                                        role !== undefined
+                                                ? (role === 0
+                                                        ? '➛ Permission: user'
+                                                        : role === 1
+                                                                ? '➛ Permission: admin'
+                                                                : role === 2
+                                                                        ? '➛ Permission: thread Admin'
+                                                                        : role === 3
+                                                                                ? '➛ Permission: super Admin'
+                                                                                : '')
+                                                : '';
 
-            for (let i = start; i < Math.min(end, commands.length); i++) {
-                helpMessage += `〔${i + 1}〕 ${prefix}${commands[i]}\n`;
-            }
+                                const aliasesMessage = aliases.length ? `➛ Aliases: ${aliases.join(', ')}\n` : '';
+                                const descriptionMessage = description ? `➛ Description: ${description}\n` : '';
+                                const usageMessage = usage ? `➛ Usage: ${usage}\n` : '';
+                                const creditsMessage = credits ? `➛ Credits: ${credits}\n` : '';
+                                const versionMessage = version ? `➛ Version: ${version}\n` : '';
+                                const cooldownMessage = cooldown ? `➛ Cooldown: ${cooldown} second(s)\n` : '';
 
-            helpMessage += `\n🎯 Event List 🎯\n\n`;
-            eventCommands.forEach((eventCommand, index) => {
-                helpMessage += `〔${index + 1}〕 ${prefix}${eventCommand}\n`;
-            });
-
-            helpMessage += `\n✦ Page ${page}/${Math.ceil(commands.length / pages)} ✦`;
-
-            api.sendMessage(helpMessage, event.threadID, event.messageID);
-
-        } else {
-            const command = [...Utils.handleEvent, ...Utils.commands]
-                .find(([key]) => key.includes(input?.toLowerCase()))?.[1];
-
-            if (command) {
-                const {
-                    name,
-                    version,
-                    role,
-                    aliases = [],
-                    description,
-                    usage,
-                    credits,
-                    cooldown,
-                    hasPrefix
-                } = command;
-
-                const roleMessage = role !== undefined ? 
-                    (role === 0 ? '• Permission: User' : 
-                    (role === 1 ? '• Permission: Admin' : 
-                    (role === 2 ? '• Permission: Thread Admin' : 
-                    (role === 3 ? '• Permission: Super Admin' : '')))) : '';
-
-                const aliasesMessage = aliases.length ? `• Aliases: ${aliases.join(', ')}\n` : '';
-                const descriptionMessage = description ? `• Description: ${description}\n` : '';
-                const usageMessage = usage ? `• Usage: ${usage}\n` : '';
-                const creditsMessage = credits ? `• Credits: ${credits}\n` : '';
-                const versionMessage = version ? `• Version: ${version}\n` : '';
-                const cooldownMessage = cooldown ? `• Cooldown: ${cooldown} second(s)\n` : '';
-
-                const message = `☄️ 〔 Command Info 〕 ☄️\n\n• Name: ${name}\n${versionMessage}${roleMessage}\n${aliasesMessage}${descriptionMessage}${usageMessage}${creditsMessage}${cooldownMessage}`;
-
-                api.sendMessage(message, event.threadID, event.messageID);
-
-            } else {
-                api.sendMessage('⚠️ Command not found.', event.threadID, event.messageID);
-            }
+                                const message = `「 Command Info 」\n\n➛ Name: ${name}\n${versionMessage}${roleMessage}\n${aliasesMessage}${descriptionMessage}${usageMessage}${creditsMessage}${cooldownMessage}`;
+                                return api.sendMessage(message, event.threadID, event.messageID);
+                        } else {
+                                return api.sendMessage('❌ Command not found.', event.threadID, event.messageID);
+                        }
+                }
+        } catch (error) {
+                console.log(error);
         }
-    } catch (error) {
-        console.log(error);
-    }
 };
 
-module.exports.handleEvent = async function({
-    api,
-    event,
-    prefix
-}) {
-    const { threadID, messageID, body } = event;
-    const message = prefix ? 'This is my prefix: ' + prefix : "𝗠𝘆 𝗽𝗿𝗲𝗳𝗶𝘅 𝗶𝘀...";
-    if (body?.toLowerCase().startsWith('prefix')) {
-        api.sendMessage(message, threadID, messageID);
-    }
+module.exports.handleEvent = async function ({ api, event, prefix }) {
+        const { threadID, messageID, body } = event;
+        const message = prefix ? 'This is my prefix: ' + prefix : "𝗠𝘆 𝗽𝗿𝗲𝗳𝗶𝘅 𝗶𝘀...";
+        if (body?.toLowerCase().startsWith('prefix')) {
+                api.sendMessage(message, threadID, messageID);
+        }
 };
