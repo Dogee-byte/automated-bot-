@@ -1,38 +1,31 @@
 module.exports.config = {
   name: "antiout",
-  version: "1.2.0",
-  author: "DungUwU",
-  description: "Automatically re-adds members who leave the group if antiout is enabled",
-  eventType: ["log:unsubscribe"],
-  category: "events"
+  version: "1.1.0"
 };
 
-module.exports.handleEvent = async function ({ event, api, Threads, Users }) => {
-  try {
-    // Get thread data
-    let threadData = (await Threads.getData(event.threadID)).data || {};
-    if (threadData.antiout == false) return; // antiout disabled
-    if (event.logMessageData.leftParticipantFbId == api.getCurrentUserID()) return; // Ignore bot self
+module.exports.handleEvent = async ({ event, api }) => {
+  const leftID = event.logMessageData?.leftParticipantFbId;
+  const currentUserID = api.getCurrentUserID();
+  const actorID = event.logMessageData?.actorFbId;
 
-    // Get user name
-    const leftUserId = event.logMessageData.leftParticipantFbId;
-    const name = global.data.userName.get(leftUserId) || await Users.getNameUser(leftUserId);
+  // Ignore kung bot ang umalis
+  if (!leftID || leftID === currentUserID) return;
 
-    // Determine if self-leave or kicked
-    const type = (event.author == leftUserId) ? "self-separation" : "kicked by admin";
+  const info = await api.getUserInfo(leftID);
+  const { name } = info[leftID];
 
-    if (type === "self-separation") {
-      // Try to add user back
-      api.addUserToGroup(leftUserId, event.threadID, (error, info) => {
-        if (error) {
-          api.sendMessage(`Unable to re-add ${name} to the group 😢`, event.threadID);
-        } else {
-          api.sendMessage(`HAHAHA tanga, wala kang takas dito, ${name} 😎`, event.threadID);
-        }
-      });
-    }
-
-  } catch (err) {
-    console.error("[ANTI-OUT] Error:", err);
+  // Determine if self-leave or kicked
+  if (actorID === leftID) {
+    // Self-leave → ibalik sa group
+    api.addUserToGroup(leftID, event.threadID, (error) => {
+      if (error) {
+        api.sendMessage(`Woyyy gago! Hindi maibalik si ${name} 🙁`, event.threadID);
+      } else {
+        api.sendMessage(`HAHAHAHA TANGA, wala kang takas dito, ${name}! 🤖`, event.threadID);
+      }
+    });
+  } else {
+    // Kicked → huwag ibalik
+    api.sendMessage(`${name} na-kick ng admin! Wala kang takas dito 🤭`, event.threadID);
   }
 };
