@@ -2,7 +2,8 @@ module.exports.config = {
   name: "spam",
   version: "1.0",
   author: "kim/zed", // Converted by ari
-  role: 2,
+  cooldown: 5,
+  role: 2
 };
 
 module.exports.run = async function ({ api, event, args }) {
@@ -11,13 +12,16 @@ module.exports.run = async function ({ api, event, args }) {
 
   if (isNaN(amount) || !message) {
     return api.sendMessage(
-      "❌ Invalid usage.\n\nCorrect: {p}spam <amount> <message>",
+      "❌ 𝙸𝚗𝚟𝚊𝚕𝚒𝚍 𝚞𝚜𝚊𝚐𝚎.\n\n𝙲𝚘𝚛𝚛𝚎𝚌𝚝: {𝚙}𝚜𝚙𝚊𝚖 [ 𝚊𝚖𝚘𝚞𝚗𝚝 ] [ 𝚖𝚎𝚜𝚜𝚊𝚐𝚎 ]",
       event.threadID,
       event.messageID
     );
   }
 
+  let spamText = "";
   for (let i = 0; i < amount; i++) {
-    api.sendMessage(message, event.threadID);
+    spamText += message + "\n";
   }
+
+  api.sendMessage(spamText, event.threadID, event.messageID);
 };
