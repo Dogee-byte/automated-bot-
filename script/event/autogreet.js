@@ -30,10 +30,14 @@ const greetings = {
 
 module.exports.config = {
   name: "autogreet",
-  version: "1.0.2",
+  version: "1.0.3",
   credits: "Zed + convert by ari",
   description: "Automatically send greetings at specific times",
-  eventType: true
+  eventType: ["thread-update"], 
+  commandCategory: "system"
+};
+
+module.exports.handleEvent = function({ api }) {
 };
 
 module.exports.onLoad = function({ api }) {
