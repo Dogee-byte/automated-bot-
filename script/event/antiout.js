@@ -1,35 +1,22 @@
 module.exports.config = {
-  name: "antiout",
-  eventType: ["log:unsubscribe"],
-  version: "1.2.0",
-  credits: "DungUwU",
-  description: "Handle self-leave and kicks"
+ name: "antiout",
+ eventType: ["log:unsubscribe"],
+ version: "0.0.1",
+ credits: "DungUwU",
+ description: "Listen events"
 };
 
-module.exports.run = async ({ event, api, Threads, Users }) => {
-  let data = (await Threads.getData(event.threadID)).data || {};
-  if (data.antiout === false) return;
-
-  const leftID = event.logMessageData.leftParticipantFbId;
-  const currentUserID = api.getCurrentUserID();
-  if (!leftID || leftID === currentUserID) return;
-
-  const name = global.data.userName.get(leftID) || await Users.getNameUser(leftID);
-
-  // Determine self-leave or kicked
-  const type = (event.author === leftID) ? "self-leave" : "kicked";
-
-  if (type === "self-leave") {
-    // Ibabalik lang kung self-leave
-    api.addUserToGroup(leftID, event.threadID, (error) => {
-      if (error) {
-        api.sendMessage(`Woyyy gago! Hindi maibalik si ${name} 🙁`, event.threadID);
-      } else {
-        api.sendMessage(`HAHAHAHA TANGA, wala kang takas dito, ${name}! 🤖`, event.threadID);
-      }
-    });
-  } else {
-    // Hindi ibabalik kung na-kick
-    api.sendMessage(`${name} na-kick ng admin! Wala kang takas dito 🤭`, event.threadID);
-  }
-};
+module.exports.handleEvent = async({ event, api, Threads, Users }) => {
+ let data = (await Threads.getData(event.threadID)).data || {};
+ if (data.antiout == false) return;
+ if (event.logMessageData.leftParticipantFbId == api.getCurrentUserID()) return;
+ const name = global.data.userName.get(event.logMessageData.leftParticipantFbId) || await Users.getNameUser(event.logMessageData.leftParticipantFbId);
+ const type = (event.author == event.logMessageData.leftParticipantFbId) ? "self-separation" : "being kicked by the administrator na pasikat";
+ if (type == "self-separation") {
+  api.addUserToGroup(event.logMessageData.leftParticipantFbId, event.threadID, (error, info) => {
+   if (error) {
+    api.sendMessage(`Unable to re-add members ${name} to the group ni block ako ng hayop:( `, event.threadID)
+   } else api.sendMessage(`HAHAHAHAHA tanga wala kang takas dito, ${name}`, event.threadID);
+  })
+ }
+}
