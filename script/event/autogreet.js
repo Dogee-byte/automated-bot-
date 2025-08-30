@@ -30,12 +30,10 @@ const greetings = {
 
 module.exports.config = {
   name: "autogreet",
-  version: "1.0.0",
-  role: 0,
-  eventType: ["log:subscribe"], 
-  credits: "Zed",
-  description: "Auto greeting messages at specific times",
-  commandCategory: "system"
+  version: "1.0.2",
+  credits: "Zed + convert by ari",
+  description: "Automatically send greetings at specific times",
+  eventType: true
 };
 
 module.exports.onLoad = function({ api }) {
@@ -43,23 +41,18 @@ module.exports.onLoad = function({ api }) {
     const randomIndex = Math.floor(Math.random() * greetingArray.length);
     const { time, message } = greetingArray[randomIndex];
 
-    global.data.allThreadID.forEach(threadID => {
-      api.sendMessage(`[${time}] ${message}`, threadID);
-    });
+    if (global.data.allThreadID) {
+      global.data.allThreadID.forEach(threadID => {
+        api.sendMessage(`[${time}] ${message}`, threadID);
+      });
+    }
   }
 
   cron.schedule("0 8 * * *", () => sendRandomGreeting(greetings.morning));
-  
   cron.schedule("0 12 * * *", () => sendRandomGreeting(greetings.lunchtime));
-
   cron.schedule("0 15 * * *", () => sendRandomGreeting(greetings.afternoonSnack));
-
   cron.schedule("0 18 * * *", () => sendRandomGreeting(greetings.eveningDinner));
-
   cron.schedule("0 23 * * *", () => sendRandomGreeting(greetings.lateNightSnack));
 
-  console.log("✅ AutoGreet event loaded!");
-};
-
-module.exports.run = async function() {
+  console.log("✅ AutoGreet event loaded and scheduled!");
 };
