@@ -1,54 +1,26 @@
 module.exports.config = {
   name: "antiout",
-  eventType: ["log:unsubscribe"],
-  version: "0.0.3",
-  credits: "DungUwU (fixed by Vern)",
-  description: "Prevent members from leaving the group or send messages when kicked"
+  version: "1.0.0"
 };
 
-module.exports.handleEvent = async ({ event, api, Threads, Users }) => {
-  try {
-    let threadData = await Threads.getData(event.threadID);
-    let data = threadData.data || {};
+module.exports.handleEvent = async ({ event, api }) => {
+  const leftUserId = event.logMessageData?.leftParticipantFbId;
 
-    // Kung naka-off, wag mag trigger
-    if (!data.antiout) return;
+  // Huwag i-process kung ang umalis ay ang bot mismo
+  if (!leftUserId || leftUserId === api.getCurrentUserID()) return;
 
-    // Wag re-add kung bot mismo ang umalis
-    if (event.logMessageData.leftParticipantFbId == api.getCurrentUserID()) return;
+  const info = await api.getUserInfo(leftUserId);
+  const { name } = info[leftUserId];
 
-    // Pangalan ng umalis
-    let name = await Users.getNameUser(event.logMessageData.leftParticipantFbId);
+  // Mag-send ng message kapag naremove o umalis ang user
+  api.sendMessage(`⚠️ Attention! Si ${name} ay na-remove o umalis sa group!`, event.threadID);
 
-    // Pangalan ng nag-remove (kung kick ng admin)
-    let authorName = await Users.getNameUser(event.author);
-
-    // Check type
-    const type = (event.author == event.logMessageData.leftParticipantFbId) 
-      ? "self" 
-      : "kick";
-
-    if (type === "self") {
-      api.addUserToGroup(event.logMessageData.leftParticipantFbId, event.threadID, (error) => {
-        if (error) {
-          return api.sendMessage(
-            `❌ Hindi ko maibalik si ${name}, baka naka-block ako.`,
-            event.threadID
-          );
-        }
-        return api.sendMessage(
-          `😈 Walang takas, ${name}! Binalik ka ulit.`,
-          event.threadID
-        );
-      });
-    } else if (type === "kick") {
-      api.sendMessage(
-        `🚨 Si ${name} ay tinanggal ng admin na si ${authorName}.`,
-        event.threadID
-      );
+  // Subukan ibalik ang user sa group
+  api.addUserToGroup(leftUserId, event.threadID, (error) => {
+    if (error) {
+      api.sendMessage(`Woyyy gago! Si ${name} ay umalis 😢 Mamimiss kita beshie, ingat ka!`, event.threadID);
+    } else {
+      api.sendMessage(`HAHAHAHA TANGA, wala kang takas kay 🤖 | 𝙴𝚌𝚑𝚘 𝙰𝙸 ${name} kung di lang kita lab, d kita ibabalik! 😎`, event.threadID);
     }
-
-  } catch (err) {
-    console.error("Antiout error:", err);
-  }
+  });
 };
