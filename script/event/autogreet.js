@@ -10,19 +10,22 @@ const greetings = {
 
 module.exports.config = {
   name: "autogreet",
-  version: "1.6-test",
+  version: "2.2-test",
   author: "ari",
-  description: "Auto greetings in all GCs (test mode, latest 100 only)",
-  category: "events"
+  description: "Auto greetings in all GCs (test mode every 1 min, latest 100 only)",
+  category: "system" // mas safe kaysa "events"
 };
 
 module.exports.handleEvent = function () {};
 
-module.exports.onLoad = async function ({ api }) {
-  // Every 1 minute (for testing)
-  cron.schedule("* * * * *", () => sendRandomGreeting(api, greetings.test), { timezone: "Asia/Manila" });
+module.exports.onStart = async function ({ api }) {
+  console.log("[AUTO-GREET] Module started ✅");
 
-  console.log("[AUTO-GREET] Test schedule loaded: Every 1 minute ✅ (latest 100 threads only)");
+  // Every 1 minute (TEST MODE)
+  cron.schedule("* * * * *", () => {
+    console.log("[AUTO-GREET] Cron triggered ⏰");
+    sendRandomGreeting(api, greetings.test);
+  }, { timezone: "Asia/Manila" });
 };
 
 async function sendRandomGreeting(api, greetingArray) {
@@ -30,17 +33,26 @@ async function sendRandomGreeting(api, greetingArray) {
     const randomIndex = Math.floor(Math.random() * greetingArray.length);
     const message = greetingArray[randomIndex];
 
-    // Get latest 100 threads only
-    const threads = await api.getThreadList(100, null, ["INBOX"]);
+    console.log("[AUTO-GREET] Fetching threads...");
+    const threads = await api.getThreadList(30, null, ["INBOX"]);
+
+    if (!threads || threads.length === 0) {
+      console.log("[AUTO-GREET] No threads found ❌");
+      return;
+    }
+
     const groupThreads = threads.filter(t => t.isGroup);
+    console.log(`[AUTO-GREET] Found ${groupThreads.length} group(s).`);
 
     for (const thread of groupThreads) {
       api.sendMessage(message, thread.threadID, err => {
-        if (err) console.error("[AUTO-GREET] Failed to send:", err);
+        if (err) {
+          console.error("[AUTO-GREET] Failed to send:", err);
+        } else {
+          console.log(`[AUTO-GREET] Sent to thread: ${thread.threadID}`);
+        }
       });
     }
-
-    console.log(`[AUTO-GREET] Sent "${message}" to ${groupThreads.length} group(s).`);
   } catch (e) {
     console.error("[AUTO-GREET] Error:", e);
   }
