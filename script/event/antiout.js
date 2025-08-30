@@ -1,22 +1,26 @@
 module.exports.config = {
   name: "antiout",
-  version: "1.1.0"
+  eventType: ["log:unsubscribe"],
+  version: "1.2.0",
+  credits: "DungUwU",
+  description: "Handle self-leave and kicks"
 };
 
-module.exports.handleEvent = async ({ event, api }) => {
-  const leftID = event.logMessageData?.leftParticipantFbId;
-  const currentUserID = api.getCurrentUserID();
-  const actorID = event.logMessageData?.actorFbId;
+module.exports.run = async ({ event, api, Threads, Users }) => {
+  let data = (await Threads.getData(event.threadID)).data || {};
+  if (data.antiout === false) return;
 
-  // Ignore kung bot ang umalis
+  const leftID = event.logMessageData.leftParticipantFbId;
+  const currentUserID = api.getCurrentUserID();
   if (!leftID || leftID === currentUserID) return;
 
-  const info = await api.getUserInfo(leftID);
-  const { name } = info[leftID];
+  const name = global.data.userName.get(leftID) || await Users.getNameUser(leftID);
 
-  // Determine if self-leave or kicked
-  if (actorID === leftID) {
-    // Self-leave → ibalik sa group
+  // Determine self-leave or kicked
+  const type = (event.author === leftID) ? "self-leave" : "kicked";
+
+  if (type === "self-leave") {
+    // Ibabalik lang kung self-leave
     api.addUserToGroup(leftID, event.threadID, (error) => {
       if (error) {
         api.sendMessage(`Woyyy gago! Hindi maibalik si ${name} 🙁`, event.threadID);
@@ -25,7 +29,7 @@ module.exports.handleEvent = async ({ event, api }) => {
       }
     });
   } else {
-    // Kicked → huwag ibalik
+    // Hindi ibabalik kung na-kick
     api.sendMessage(`${name} na-kick ng admin! Wala kang takas dito 🤭`, event.threadID);
   }
 };
