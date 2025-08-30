@@ -30,14 +30,14 @@ const greetings = {
 
 module.exports.config = {
   name: "autogreet",
-  version: "1.0.3",
-  credits: "Zed + convert by ari",
-  description: "Automatically send greetings at specific times",
+  version: "1.0.4",
+  credits: "Ari",
+  description: "Automatically send greetings at specific times to all group chats",
   eventType: ["thread-update"], 
   commandCategory: "system"
 };
 
-module.exports.handleEvent = function({ api }) {
+module.exports.handleEvent = function() {
 };
 
 module.exports.onLoad = function({ api }) {
@@ -45,18 +45,22 @@ module.exports.onLoad = function({ api }) {
     const randomIndex = Math.floor(Math.random() * greetingArray.length);
     const { time, message } = greetingArray[randomIndex];
 
-    if (global.data.allThreadID) {
+    if (global.data && global.data.allThreadID && global.data.allThreadID.length > 0) {
       global.data.allThreadID.forEach(threadID => {
-        api.sendMessage(`[${time}] ${message}`, threadID);
+        api.sendMessage(`[${time}] ${message}`, threadID, (err) => {
+          if (err) console.log(`⚠️ Failed to send greet in thread ${threadID}`);
+        });
       });
+    } else {
+      console.log("⚠️ No thread list found (global.data.allThreadID empty)");
     }
   }
 
-  cron.schedule("0 8 * * *", () => sendRandomGreeting(greetings.morning));
-  cron.schedule("0 12 * * *", () => sendRandomGreeting(greetings.lunchtime));
-  cron.schedule("0 15 * * *", () => sendRandomGreeting(greetings.afternoonSnack));
-  cron.schedule("0 18 * * *", () => sendRandomGreeting(greetings.eveningDinner));
-  cron.schedule("0 23 * * *", () => sendRandomGreeting(greetings.lateNightSnack));
+  cron.schedule("0 8 * * *", () => sendRandomGreeting(greetings.morning), { timezone: "Asia/Manila" });
+  cron.schedule("0 12 * * *", () => sendRandomGreeting(greetings.lunchtime), { timezone: "Asia/Manila" });
+  cron.schedule("0 15 * * *", () => sendRandomGreeting(greetings.afternoonSnack), { timezone: "Asia/Manila" });
+  cron.schedule("0 18 * * *", () => sendRandomGreeting(greetings.eveningDinner), { timezone: "Asia/Manila" });
+  cron.schedule("0 23 * * *", () => sendRandomGreeting(greetings.lateNightSnack), { timezone: "Asia/Manila" });
 
-  console.log("✅ AutoGreet event loaded and scheduled!");
+  console.log("✅ AutoGreet event loaded and scheduled for ALL group chats!");
 };
