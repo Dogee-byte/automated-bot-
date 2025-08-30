@@ -7,7 +7,7 @@ module.exports.config = {
   category: "events"
 };
 
-module.exports.handleEvent = async ({ event, api, Threads, Users }) => {
+module.exports.handleEvent = async function ({ event, api, Threads, Users }) => {
   try {
     // Get thread data
     let threadData = (await Threads.getData(event.threadID)).data || {};
