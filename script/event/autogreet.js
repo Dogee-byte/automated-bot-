@@ -2,65 +2,56 @@ const cron = require("node-cron");
 
 const greetings = {
   morning: [
-    { time: "7:35 AM", message: "Good morning! ☀️ How about starting the day with a delicious breakfast?" },
-    { time: "8:30 AM", message: "Rise and shine! It's breakfast time! 🍳☕" },
-    { time: "9:00 AM", message: "Morning vibes! Anyone up for a breakfast feast?" },
+    "Good morning! ☀️ How about starting the day with a delicious breakfast?",
+    "Rise and shine! It's breakfast time! 🍳☕",
+    "Morning vibes! Anyone up for a breakfast feast?"
   ],
   lunchtime: [
-    { time: "12:00 PM", message: "It's lunchtime, my friends! Let's gather for a tasty meal." },
-    { time: "12:30 PM", message: "Hungry yet? Lunch plans anyone?" },
-    { time: "1:00 PM", message: "Lunch break! Who's in for some good food and great company?" },
+    "It's lunchtime, my friends! Let's gather for a tasty meal.",
+    "Hungry yet? Lunch plans anyone?",
+    "Lunch break! Who's in for some good food and great company?"
   ],
   afternoonSnack: [
-    { time: "3:00 PM", message: "Time for a snack break! Join me for some treats?" },
-    { time: "3:30 PM", message: "Feeling a bit peckish? Snacks and chit-chat await!" },
-    { time: "4:00 PM", message: "Afternoon delight: Snacks, laughter, and fun!" },
+    "Time for a snack break! Join me for some treats?",
+    "Feeling a bit peckish? Snacks and chit-chat await!",
+    "Afternoon delight: Snacks, laughter, and fun!"
   ],
   eveningDinner: [
-    { time: "6:00 PM", message: "Dinner plans tonight? Let's enjoy a hearty meal together." },
-    { time: "7:00 PM", message: "Dinner is served! Who's joining me at the table?" },
-    { time: "7:36 PM", message: "Evening has come, and so has the dinner bell! 🍽️" },
+    "Dinner plans tonight? Let's enjoy a hearty meal together.",
+    "Evening has come, and so has the dinner bell! 🍽️",
+    "Dinner is served! Who's joining me at the table?"
   ],
   lateNightSnack: [
-    { time: "11:00 PM", message: "Late-night munchies? Come on over for some snacks!" },
-    { time: "11:30 PM", message: "Midnight snack run, anyone? Let's satisfy those cravings." },
-    { time: "12:00 AM", message: "Burning the midnight oil? Grab a snack and keep me company." },
-  ],
+    "Late-night munchies? Come on over for some snacks!",
+    "Midnight snack run, anyone? Let's satisfy those cravings.",
+    "Burning the midnight oil? Grab a snack and keep me company."
+  ]
 };
 
 module.exports.config = {
   name: "autogreet",
-  version: "1.0.4",
-  credits: "Ari",
-  description: "Automatically send greetings at specific times to all group chats",
-  eventType: ["thread-update"], 
-  commandCategory: "system"
+  version: "1.2",
+  author: "ari",
+  description: "Auto greetings in GC",
+  category: "events"
 };
 
-module.exports.handleEvent = function() {
+module.exports.onLoad = function ({ api }) {
+  cron.schedule("35 7 * * *", () => sendRandomGreeting(api, greetings.morning), { timezone: "Asia/Manila" });
+  cron.schedule("0 12 * * *", () => sendRandomGreeting(api, greetings.lunchtime), { timezone: "Asia/Manila" });
+  cron.schedule("0 15 * * *", () => sendRandomGreeting(api, greetings.afternoonSnack), { timezone: "Asia/Manila" });
+  cron.schedule("0 18 * * *", () => sendRandomGreeting(api, greetings.eveningDinner), { timezone: "Asia/Manila" });
+  cron.schedule("0 23 * * *", () => sendRandomGreeting(api, greetings.lateNightSnack), { timezone: "Asia/Manila" });
 };
 
-module.exports.onLoad = function({ api }) {
-  function sendRandomGreeting(greetingArray) {
-    const randomIndex = Math.floor(Math.random() * greetingArray.length);
-    const { time, message } = greetingArray[randomIndex];
+async function sendRandomGreeting(api, greetingArray) {
+  const randomIndex = Math.floor(Math.random() * greetingArray.length);
+  const message = greetingArray[randomIndex];
 
-    if (global.data && global.data.allThreadID && global.data.allThreadID.length > 0) {
-      global.data.allThreadID.forEach(threadID => {
-        api.sendMessage(`[${time}] ${message}`, threadID, (err) => {
-          if (err) console.log(`⚠️ Failed to send greet in thread ${threadID}`);
-        });
-      });
-    } else {
-      console.log("⚠️ No thread list found (global.data.allThreadID empty)");
-    }
+  const threadList = await api.getThreadList(100, null, ["INBOX"]);
+  const groupThreads = threadList.filter(t => t.isGroup);
+
+  for (const thread of groupThreads) {
+    api.sendMessage(message, thread.threadID);
   }
-
-  cron.schedule("0 8 * * *", () => sendRandomGreeting(greetings.morning), { timezone: "Asia/Manila" });
-  cron.schedule("0 12 * * *", () => sendRandomGreeting(greetings.lunchtime), { timezone: "Asia/Manila" });
-  cron.schedule("0 15 * * *", () => sendRandomGreeting(greetings.afternoonSnack), { timezone: "Asia/Manila" });
-  cron.schedule("0 18 * * *", () => sendRandomGreeting(greetings.eveningDinner), { timezone: "Asia/Manila" });
-  cron.schedule("0 23 * * *", () => sendRandomGreeting(greetings.lateNightSnack), { timezone: "Asia/Manila" });
-
-  console.log("✅ AutoGreet event loaded and scheduled for ALL group chats!");
-};
+}
