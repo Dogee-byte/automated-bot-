@@ -10,16 +10,20 @@ const greetings = {
 
 module.exports.config = {
   name: "autogreet",
-  version: "2.2-test",
+  version: "2.3-test",
   author: "ari",
   description: "Auto greetings in all GCs (test mode every 1 min, latest 100 only)",
-  category: "system" // mas safe kaysa "events"
+  category: "system"
 };
 
 module.exports.handleEvent = function () {};
 
-module.exports.onStart = async function ({ api }) {
-  console.log("[AUTO-GREET] Module started ✅");
+module.exports.run = async function ({ api }) {
+  console.log("[AUTO-GREET] Command loaded ✅");
+
+  // Avoid double scheduling
+  if (global.autogreetStarted) return;
+  global.autogreetStarted = true;
 
   // Every 1 minute (TEST MODE)
   cron.schedule("* * * * *", () => {
@@ -34,7 +38,7 @@ async function sendRandomGreeting(api, greetingArray) {
     const message = greetingArray[randomIndex];
 
     console.log("[AUTO-GREET] Fetching threads...");
-    const threads = await api.getThreadList(30, null, ["INBOX"]);
+    const threads = await api.getThreadList(100, null, ["INBOX"]);
 
     if (!threads || threads.length === 0) {
       console.log("[AUTO-GREET] No threads found ❌");
