@@ -1,22 +1,42 @@
 module.exports.config = {
- name: "antiout",
- eventType: ["log:unsubscribe"],
- version: "0.0.1",
- credits: "Ari",
- description: "Listen events"
+  name: "antiout",
+  version: "1.1.0",
+  author: "DungUwU",
+  description: "Automatically re-adds members who leave the group if antiout is enabled",
+  eventType: ["log:unsubscribe"],
+  category: "events"
 };
 
-module.exports.handleEvent = async({ event, api, Threads, Users }) => {
- let data = (await Threads.getData(event.threadID)).data || {};
- if (data.antiout == false) return;
- if (event.logMessageData.leftParticipantFbId == api.getCurrentUserID()) return;
- const name = global.data.userName.get(event.logMessageData.leftParticipantFbId) || await Users.getNameUser(event.logMessageData.leftParticipantFbId);
- const type = (event.author == event.logMessageData.leftParticipantFbId) ? "self-separation" : "being kicked by the administrator na pasikat";
- if (type == "self-separation") {
-  api.addUserToGroup(event.logMessageData.leftParticipantFbId, event.threadID, (error, info) => {
-   if (error) {
-    api.sendMessage(`Unable to re-add members ${name} to the group ni block ako ng hayop:( `, event.threadID)
-   } else api.sendMessage(`HAHAHAHA TANGA, wala kang takas kay 🤖 | 𝙴𝚌𝚑𝚘 𝙰𝙸 ${name} kung d lang kita lab d kita ibabalik （￣へ￣）`, event.threadID);
-  })
- }
-}
+// Event listener
+module.exports.handleEvent = async ({ event, api, Threads, Users }) => {
+  try {
+    // Get thread data
+    let threadData = (await Threads.getData(event.threadID)).data || {};
+    if (threadData.antiout == false) return; // antiout disabled
+    if (event.logMessageData.leftParticipantFbId == api.getCurrentUserID()) return; // Ignore self
+
+    // Get user name
+    const leftUserId = event.logMessageData.leftParticipantFbId;
+    const name = global.data.userName.get(leftUserId) || await Users.getNameUser(leftUserId);
+
+    // Determine type of leave
+    const type = (event.author == leftUserId) ? "self-separation" : "kicked by admin";
+
+    if (type === "self-separation") {
+      // Try to add user back
+      api.addUserToGroup(leftUserId, event.threadID, (error, info) => {
+        if (error) {
+          api.sendMessage(`Unable to re-add ${name} to the group 😢`, event.threadID);
+        } else {
+          api.sendMessage(`HAHAHA tanga, wala kang takas dito, ${name} 😎`, event.threadID);
+        }
+      });
+    }
+  } catch (err) {
+    console.error("[ANTI-OUT] Error:", err);
+  }
+};
+
+module.exports.run = async ({ event, api, Threads, Users }) => {
+  api.sendMessage("AntiOut module is active ✅", event.threadID);
+};
