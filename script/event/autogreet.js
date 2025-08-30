@@ -36,6 +36,9 @@ module.exports.config = {
   category: "events"
 };
 
+module.exports.handleEvent =function () {
+};
+
 module.exports.onLoad = function ({ api }) {
   cron.schedule("35 7 * * *", () => sendRandomGreeting(api, greetings.morning), { timezone: "Asia/Manila" });
   cron.schedule("0 12 * * *", () => sendRandomGreeting(api, greetings.lunchtime), { timezone: "Asia/Manila" });
