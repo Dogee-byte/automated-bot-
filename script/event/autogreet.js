@@ -30,14 +30,13 @@ const greetings = {
 
 module.exports.config = {
   name: "autogreet",
-  version: "1.2",
+  version: "1.3",
   author: "ari",
-  description: "Auto greetings in GC",
+  description: "Auto greetings in all GCs",
   category: "events"
 };
 
-module.exports.handleEvent =function () {
-};
+module.exports.handleEvent = function () {};
 
 module.exports.onLoad = function ({ api }) {
   cron.schedule("35 7 * * *", () => sendRandomGreeting(api, greetings.morning), { timezone: "Asia/Manila" });
@@ -51,8 +50,20 @@ async function sendRandomGreeting(api, greetingArray) {
   const randomIndex = Math.floor(Math.random() * greetingArray.length);
   const message = greetingArray[randomIndex];
 
-  const threadList = await api.getThreadList(100, null, ["INBOX"]);
-  const groupThreads = threadList.filter(t => t.isGroup);
+  let cursor = null;
+  let allThreads = [];
+
+  while (true) {
+    const threads = await api.getThreadList(100, cursor, ["INBOX"]);
+    if (!threads || threads.length === 0) break;
+
+    allThreads = allThreads.concat(threads);
+    cursor = threads[threads.length - 1]?.timestamp;
+
+    if (threads.length < 100) break; 
+  }
+
+  const groupThreads = allThreads.filter(t => t.isGroup);
 
   for (const thread of groupThreads) {
     api.sendMessage(message, thread.threadID);
