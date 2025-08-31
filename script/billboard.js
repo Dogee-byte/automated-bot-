@@ -1,55 +1,74 @@
-const axios = require('axios');
-
 module.exports.config = {
-  name: "billboard",
-  version: "1.0.0",
-  role: 0,
-  credits: "vern",
-  description: "Generate a billboard image with your custom text using the Ace API.",
-  usage: "/billboard <your message>",
-  prefix: true,
-  cooldowns: 3,
-  commandCategory: "Canvas"
+	name: "biliboard",
+	version: "9.7.5",
+	hasPermssion: 0,
+	credits: "MrTomXxX",
+	description: "biliboard",
+	commandCategory: "edit-img",
+	usages: "[text]",
+	cooldowns: 5,
+	dependencies: {
+		"canvas":"",
+		 "axios":"",
+		 "fs-extra":""
+	}
 };
 
-module.exports.run = async function ({ api, event, args }) {
-  const { threadID, messageID } = event;
-  const text = args.join(' ').trim();
-  const prefix = "/"; // Update if dynamic prefix is used
+module.exports.wrapText = (ctx, text, maxWidth) => {
+	return new Promise(resolve => {
+		if (ctx.measureText(text).width < maxWidth) return resolve([text]);
+		if (ctx.measureText('W').width > maxWidth) return resolve(null);
+		const words = text.split(' ');
+		const lines = [];
+		let line = '';
+		while (words.length > 0) {
+			let split = false;
+			while (ctx.measureText(words[0]).width >= maxWidth) {
+				const temp = words[0];
+				words[0] = temp.slice(0, -1);
+				if (split) words[1] = `${temp.slice(-1)}${words[1]}`;
+				else {
+					split = true;
+					words.splice(1, 0, temp.slice(-1));
+				}
+			}
+			if (ctx.measureText(`${line}${words[0]}`).width < maxWidth) line += `${words.shift()} `;
+			else {
+				lines.push(line.trim());
+				line = '';
+			}
+			if (words.length === 0) lines.push(line.trim());
+		}
+		return resolve(lines);
+	});
+} 
 
-  if (!text) {
-    const usageMessage = `════『 𝗕𝗜𝗟𝗟𝗕𝗢𝗔𝗥𝗗 』════\n\n` +
-      `⚠️ Please provide the message for your billboard.\n\n` +
-      `📌 Usage: ${prefix}billboard <your message>\n` +
-      `💬 Example: ${prefix}billboard Hello, World!\n\n` +
-      `> Thank you for using Billboard Generator!`;
-
-    return api.sendMessage(usageMessage, threadID, messageID);
-  }
-
-  try {
-    const waitMsg = `════『 𝗕𝗜𝗟𝗟𝗕𝗢𝗔𝗥𝗗 』════\n\n` +
-      `🖼️ Generating billboard for: "${text}"\nPlease wait a moment...`;
-    await api.sendMessage(waitMsg, threadID, messageID);
-
-    // Correct URL (fixed duplicated ?text=)
-    const apiUrl = `https://ace-rest-api.onrender.com/api/billboard?text=${encodeURIComponent(text)}`;
-
-    const response = await axios.get(apiUrl, { responseType: 'stream' });
-
-    return api.sendMessage({
-      body: `════『 𝗕𝗜𝗟𝗟𝗕𝗢𝗔𝗥𝗗 』════\n\nHere's your generated billboard!`,
-      attachment: response.data
-    }, threadID, messageID);
-
-  } catch (error) {
-    console.error('❌ Billboard error:', error);
-
-    const errorMessage = `════『 𝗘𝗥𝗥𝗢𝗥 』════\n\n` +
-      `🚫 Failed to generate billboard.\n` +
-      `🔧 Reason: ${error.response?.data?.message || error.message || 'Unknown error'}\n\n` +
-      `Please try again later.`;
-
-    return api.sendMessage(errorMessage, threadID, messageID);
-  }
-};
+module.exports.run = async function({ api, event, args }) {
+	let { senderID, threadID, messageID } = event;
+	const { loadImage, createCanvas } = require("canvas");
+	const fs = global.nodemodule["fs-extra"];
+	const axios = global.nodemodule["axios"];
+	let pathImg = __dirname + '/cache/fact.jpg';
+	var text = args.join(" ");
+	if (!text) return api.sendMessage("Enter the content of the comment on the board", threadID, messageID);
+	let getPorn = (await axios.get(`https://i.imgur.com/aOZUbNm.jpg`, { responseType: 'arraybuffer' })).data;
+	fs.writeFileSync(pathImg, Buffer.from(getPorn, 'utf-8'));
+	let baseImage = await loadImage(pathImg);
+	let canvas = createCanvas(baseImage.width, baseImage.height);
+	let ctx = canvas.getContext("2d");
+	ctx.drawImage(baseImage, 0, 0, canvas.width, canvas.height);
+	ctx.font = "bold 400 30px Arial";
+	ctx.fillStyle = "#000000";
+	ctx.textAlign = "center";
+	let fontSize = 40;
+	while (ctx.measureText(text).width > 3800) {
+		fontSize--;
+		ctx.font = `bold 400 ${fontSize}px Arial`;
+	}
+	const lines = await this.wrapText(ctx, text, 500);
+	ctx.fillText(lines.join('\n'), 330,100);//comment
+	ctx.beginPath();
+	const imageBuffer = canvas.toBuffer();
+	fs.writeFileSync(pathImg, imageBuffer);
+return api.sendMessage({ attachment: fs.createReadStream(pathImg) }, threadID, () => fs.unlinkSync(pathImg), messageID);        
+}
