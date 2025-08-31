@@ -1,12 +1,13 @@
 const fs = require('fs');
 const path = require('path');
+const { createCanvas, loadImage } = require('canvas');
 
 module.exports.config = {
   name: "billboard",
-  version: "1.0.1",
+  version: "2.1.0",
   role: 0,
-  credits: "vern (modified by you)",
-  description: "Send your own billboard image instead of API.",
+  credits: "vern + ikaw",
+  description: "Generate a billboard image with custom text inside the board.",
   usage: "/billboard <your message>",
   prefix: true,
   cooldowns: 3,
@@ -19,36 +20,83 @@ module.exports.run = async function ({ api, event, args }) {
   const prefix = "/";
 
   if (!text) {
-    const usageMessage = `════『 𝗕𝗜𝗟𝗟𝗕𝗢𝗔𝗥𝗗 』════\n\n` +
-      `⚠️ Please provide the message for your billboard.\n\n` +
-      `📌 Usage: ${prefix}billboard <your message>\n` +
-      `💬 Example: ${prefix}billboard Hello, World!\n\n` +
-      `> Thank you for using Billboard Generator!`;
-
-    return api.sendMessage(usageMessage, threadID, messageID);
+    return api.sendMessage(
+      `📌 Usage: ${prefix}billboard <your message>\n💬 Example: ${prefix}billboard Hello World!`,
+      threadID, messageID
+    );
   }
 
   try {
-    // Path sa sarili mong image (pwedeng JPG/PNG na nakasave sa "cache" folder)
-    const imgPath = path.join(__dirname, "cache", "https://i.imgur.com/1l75057.jpg");
-
-    if (!fs.existsSync(imgPath)) {
-      return api.sendMessage("🚫 Wala pang naka-save na billboard image sa cache/billboard.jpg", threadID, messageID);
+    // base image path (yung pinakita mong billboard picture)
+    const basePath = path.join(__dirname, "cache", "https://i.imgur.com/1l75057.jpg");
+    if (!fs.existsSync(basePath)) {
+      return api.sendMessage("🚫 Wala pang base image sa cache/billboard_base.jpg", threadID, messageID);
     }
 
+    // Load base image
+    const baseImage = await loadImage(basePath);
+    const canvas = createCanvas(baseImage.width, baseImage.height);
+    const ctx = canvas.getContext("2d");
+
+    // Draw base image
+    ctx.drawImage(baseImage, 0, 0);
+
+    // === Billboard rectangle area (approx) ===
+    const rectX = 90;   // left margin
+    const rectY = 80;   // top margin
+    const rectW = 620;  // width ng billboard
+    const rectH = 320;  // height ng billboard
+
+    // === Text style ===
+    ctx.font = "bold 50px Arial";
+    ctx.fillStyle = "white";       // main text color
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    // Shadow / outline para mas visible
+    ctx.shadowColor = "black";
+    ctx.shadowBlur = 6;
+    ctx.lineWidth = 4;
+
+    // === Word-wrap ===
+    const maxWidth = rectW - 40; // margin sa gilid
+    const lineHeight = 60;
+    const words = text.split(" ");
+    let lines = [];
+    let currentLine = words[0];
+
+    for (let i = 1; i < words.length; i++) {
+      let word = words[i];
+      let width = ctx.measureText(currentLine + " " + word).width;
+      if (width < maxWidth) {
+        currentLine += " " + word;
+      } else {
+        lines.push(currentLine);
+        currentLine = word;
+      }
+    }
+    lines.push(currentLine);
+
+    // Center vertically sa loob ng billboard
+    const startY = rectY + rectH / 2 - (lines.length * lineHeight) / 2;
+
+    lines.forEach((line, i) => {
+      ctx.fillText(line, rectX + rectW / 2, startY + i * lineHeight);
+    });
+
+    // === Save output ===
+    const outPath = path.join(__dirname, "cache", "billboard_out.jpg");
+    const buffer = canvas.toBuffer("image/jpeg");
+    fs.writeFileSync(outPath, buffer);
+
+    // Send result
     return api.sendMessage({
-      body: `════『 𝗕𝗜𝗟𝗟𝗕𝗢𝗔𝗥𝗗 』════\n\n🖼️ "${text}"\n\n> Using your own custom image.`,
-      attachment: fs.createReadStream(imgPath)
+      body: `🖼️ Billboard created!\n\n"${text}"`,
+      attachment: fs.createReadStream(outPath)
     }, threadID, messageID);
 
-  } catch (error) {
-    console.error('❌ Billboard error:', error);
-
-    const errorMessage = `════『 𝗘𝗥𝗥𝗢𝗥 』════\n\n` +
-      `🚫 Failed to send billboard image.\n` +
-      `🔧 Reason: ${error.message || 'Unknown error'}\n\n` +
-      `Please try again later.`;
-
-    return api.sendMessage(errorMessage, threadID, messageID);
+  } catch (err) {
+    console.error("Billboard error:", err);
+    return api.sendMessage("❌ Failed to generate billboard image.", threadID, messageID);
   }
 };
