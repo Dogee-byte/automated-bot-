@@ -1,55 +1,83 @@
-const axios = require('axios');
+const { createCanvas, loadImage, registerFont } = require("canvas");
+const fs = require("fs");
+const path = require("path");
 
 module.exports.config = {
   name: "billboard",
-  version: "1.0.0",
+  version: "1.2.0",
+  credits: "Ari",
   role: 0,
-  credits: "vern",
-  description: "Generate a billboard image with your custom text using the Ace API.",
-  usage: "/billboard <your message>",
-  prefix: true,
-  cooldowns: 3,
-  commandCategory: "Canvas"
+  description: "Show your text on a billboard",
+  aliases: ["bb"],
+  cooldown: 5
 };
 
-module.exports.run = async function ({ api, event, args }) {
-  const { threadID, messageID } = event;
-  const text = args.join(' ').trim();
-  const prefix = "/"; // Update if dynamic prefix is used
-
-  if (!text) {
-    const usageMessage = `════『 𝗕𝗜𝗟𝗟𝗕𝗢𝗔𝗥𝗗 』════\n\n` +
-      `⚠️ Please provide the message for your billboard.\n\n` +
-      `📌 Usage: ${prefix}billboard <your message>\n` +
-      `💬 Example: ${prefix}billboard Hello, World!\n\n` +
-      `> Thank you for using Billboard Generator!`;
-
-    return api.sendMessage(usageMessage, threadID, messageID);
-  }
-
+module.exports.run = async ({ api, event, args }) => {
   try {
-    const waitMsg = `════『 𝗕𝗜𝗟𝗟𝗕𝗢𝗔𝗥𝗗 』════\n\n` +
-      `🖼️ Generating billboard for: "${text}"\nPlease wait a moment...`;
-    await api.sendMessage(waitMsg, threadID, messageID);
+    const fontPath = path.join(__dirname, "billboard-font.ttf");
+    if (fs.existsSync(fontPath)) {
+      registerFont(fontPath, { family: "BillboardFont" });
+    }
 
-    // Correct URL (fixed duplicated ?text=)
-    const apiUrl = `https://ace-rest-api.onrender.com/api/billboard?text=${encodeURIComponent(text)}`;
+    const text = args.length > 0 ? args.join(" ") : "Welcome to AutoBot 🚀";
 
-    const response = await axios.get(apiUrl, { responseType: 'stream' });
+    const billboardImg = "https://i.imgur.com/1l75057.jpg"; 
 
-    return api.sendMessage({
-      body: `════『 𝗕𝗜𝗟𝗟𝗕𝗢𝗔𝗥𝗗 』════\n\nHere's your generated billboard!\n\n> Powered by Ace API`,
-      attachment: response.data
-    }, threadID, messageID);
+    const bg = await loadImage(billboardImg);
+    const canvas = createCanvas(bg.width, bg.height);
+    const ctx = canvas.getContext("2d");
 
-  } catch (error) {
-    console.error('❌ Billboard error:', error);
+    ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
 
-    const errorMessage = `════『 𝗘𝗥𝗥𝗢𝗥 』════\n\n` +
-      `🚫 Failed to generate billboard.\n` +
-      `🔧 Reason: ${error.response?.data?.message || error.message || 'Unknown error'}\n\n` +
-      `Please try again later.`;
+    ctx.font = "70px BillboardFont, Arial"; 
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.shadowColor = "black";
+    ctx.shadowBlur = 8;
 
-    return api.sendMessage(errorMessage, threadID, messageID);
+    function wrapText(context, text, x, y, maxWidth, lineHeight) {
+      const words = text.split(" ");
+      let line = "";
+      let lines = [];
+      for (let n = 0; n < words.length; n++) {
+        let testLine = line + words[n] + " ";
+        let metrics = context.measureText(testLine);
+        let testWidth = metrics.width;
+        if (testWidth > maxWidth && n > 0) {
+          lines.push(line.trim());
+          line = words[n] + " ";
+        } else {
+          line = testLine;
+        }
+      }
+      lines.push(line.trim());
+
+      let startY = y - ((lines.length - 1) * lineHeight) / 2;
+
+      for (let i = 0; i < lines.length; i++) {
+        context.fillText(lines[i], x, startY + i * lineHeight);
+      }
+    }
+
+    wrapText(ctx, text, canvas.width / 2, canvas.height / 2, canvas.width - 300, 80);
+    
+    const outPath = path.join(__dirname, `billboard_${event.senderID}.png`);
+    const out = fs.createWriteStream(outPath);
+    const stream = canvas.createPNGStream();
+    stream.pipe(out);
+
+    out.on("finish", () => {
+      api.sendMessage(
+        {
+          body: `📢 Billboard generated!\nYour text: "${text}"`,
+          attachment: fs.createReadStream(outPath)
+        },
+        event.threadID,
+        () => fs.unlinkSync(outPath),
+        event.messageID
+      );
+    });
+  } catch (e) {
+    api.sendMessage(`❌ Error: ${e.message}`, event.threadID, event.messageID);
   }
 };
