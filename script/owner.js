@@ -4,9 +4,10 @@ const path = require('path');
 
 module.exports.config = {
   name: "owner",
-  version: "4.0.0",
+  version: "3.5.0",
   role: 0,
-  description: "Owner info (Futuristic with Emoji Support)",
+  description: "Owner info (Futuristic Cool Design)",
+  credit: "ari",
   cooldown: 5,
   aliases: ["ownerinfo", "botowner"]
 };
@@ -45,6 +46,27 @@ module.exports.run = async ({ api, event }) => {
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, width, height);
 
+    ctx.strokeStyle = 'rgba(0, 255, 242, 0.08)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < width; x += 50) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+      ctx.stroke();
+    }
+    for (let y = 0; y < height; y += 50) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    }
+
+    const glow = ctx.createRadialGradient(width/2, height/2, 100, width/2, height/2, 600);
+    glow.addColorStop(0, 'rgba(0,255,242,0.2)');
+    glow.addColorStop(1, 'transparent');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0,0,width,height);
+
     const avatarSize = 280;
     const avatarX = 120, avatarY = height/2 - avatarSize/2;
     try {
@@ -62,8 +84,21 @@ module.exports.run = async ({ api, event }) => {
       ctx.fill();
     }
 
+    const rings = ['#00fff2', '#ff00ff', '#00fff2', '#ff0080'];
+    rings.forEach((color, i) => {
+      ctx.beginPath();
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = color;
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 25;
+      ctx.arc(avatarX + avatarSize/2, avatarY + avatarSize/2, avatarSize/2 + 10 + (i*8), 0, Math.PI*2);
+      ctx.stroke();
+    });
+    ctx.shadowBlur = 0;
+
     const textX = avatarX + avatarSize + 80;
     const topY = avatarY + 40;
+
     ctx.fillStyle = '#ffffff';
     ctx.font = '110px Bebas, sans-serif';
     ctx.textAlign = 'left';
@@ -74,12 +109,17 @@ module.exports.run = async ({ api, event }) => {
     ctx.shadowBlur = 10;
     ctx.fillStyle = '#ff00ff';
     ctx.font = '45px Poppins, sans-serif';
-    await drawTextWithEmoji(ctx, owner.title, textX, topY + 150, 50);
+    ctx.fillText(owner.title, textX, topY + 150);
 
     ctx.shadowBlur = 0;
     ctx.fillStyle = 'rgba(255,255,255,0.95)';
     ctx.font = '32px Poppins, sans-serif';
-    await drawTextWithEmoji(ctx, owner.bio, textX, topY + 220, 40, 700);
+    wrapText(ctx, owner.bio, textX, topY + 220, 700, 45);
+
+    ctx.fillStyle = '#00fff2';
+    ctx.shadowColor = '#00fff2';
+    ctx.shadowBlur = 20;
+    ctx.fillRect(0, height - 12, width, 12);
 
     const buffer = canvas.toBuffer('image/png');
     fs.writeFileSync(outPath, buffer);
@@ -96,50 +136,18 @@ module.exports.run = async ({ api, event }) => {
   }
 };
 
-async function drawTextWithEmoji(ctx, text, x, y, lineHeight, maxWidth = 800) {
+function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
   const words = text.split(' ');
   let line = '';
   for (let n = 0; n < words.length; n++) {
     const testLine = line + words[n] + ' ';
     if (ctx.measureText(testLine).width > maxWidth && n > 0) {
-      await renderLine(ctx, line, x, y);
+      ctx.fillText(line, x, y);
       line = words[n] + ' ';
       y += lineHeight;
     } else {
       line = testLine;
     }
   }
-  await renderLine(ctx, line, x, y);
-}
-
-async function renderLine(ctx, line, x, y) {
-  let cursorX = x;
-  const regex = /\p{Emoji_Presentation}|\p{Emoji}\uFE0F/gu;
-  const parts = line.split(regex);
-  const emojis = line.match(regex);
-
-  for (let i = 0; i < parts.length; i++) {
-    const textPart = parts[i];
-    if (textPart) {
-      ctx.fillText(textPart, cursorX, y);
-      cursorX += ctx.measureText(textPart).width;
-    }
-
-    if (emojis && emojis[i]) {
-      const emoji = emojis[i];
-      const url = twemoji.parse(emoji, { folder: 'svg', ext: '.svg' })
-        .match(/src="([^"]+)"/)?.[1];
-      if (url) {
-        try {
-          const img = await loadImage(url);
-          const size = parseInt(ctx.font, 10) || 32;
-          ctx.drawImage(img, cursorX, y - size + 10, size, size);
-          cursorX += size;
-        } catch (err) {
-          ctx.fillText(emoji, cursorX, y); // fallback
-          cursorX += ctx.measureText(emoji).width;
-        }
-      }
-    }
-  }
+  ctx.fillText(line, x, y);
 }
