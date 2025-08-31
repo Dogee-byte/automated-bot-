@@ -4,10 +4,10 @@ const path = require("path");
 
 module.exports.config = {
   name: "billboard",
-  version: "1.4.0",
+  version: "2.0.0",
   credits: "Ari",
   role: 0,
-  description: "Show your text on a tilted billboard",
+  description: "Show your text inside the billboard",
   aliases: ["bb"],
   cooldown: 5
 };
@@ -22,34 +22,29 @@ module.exports.run = async ({ api, event, args }) => {
     const text = args.length > 0 ? args.join(" ") : "Your Text Here";
 
     const billboardImg = "https://i.imgur.com/1l75057.jpg";
-
     const bg = await loadImage(billboardImg);
     const canvas = createCanvas(bg.width, bg.height);
     const ctx = canvas.getContext("2d");
 
     ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
 
-    ctx.save();
+    const boxX = 420;
+    const boxY = 240;
+    const boxWidth = 1080;
+    const boxHeight = 620;
 
-    ctx.translate(canvas.width / 2, canvas.height / 2.4); 
-    ctx.rotate(-0.05); 
-    ctx.scale(1, 0.9); 
+    let fontSize = 20; 
+    ctx.font = `${fontSize}px BillboardFont, Arial`;
+    let lineHeight = fontSize + 10;
 
-    ctx.font = "45px BillboardFont, Arial";
-    ctx.fillStyle = "#000000"; 
-    ctx.textAlign = "center";
-    ctx.shadowColor = "rgba(255,255,255,0.4)"; 
-    ctx.shadowBlur = 4;
-
-    function wrapText(context, text, x, y, maxWidth, lineHeight) {
+    function getLines(context, text, maxWidth) {
       const words = text.split(" ");
       let line = "";
       let lines = [];
 
       for (let n = 0; n < words.length; n++) {
         let testLine = line + words[n] + " ";
-        let metrics = context.measureText(testLine);
-        let testWidth = metrics.width;
+        let testWidth = context.measureText(testLine).width;
         if (testWidth > maxWidth && n > 0) {
           lines.push(line.trim());
           line = words[n] + " ";
@@ -58,16 +53,34 @@ module.exports.run = async ({ api, event, args }) => {
         }
       }
       lines.push(line.trim());
-
-      let startY = y - ((lines.length - 1) * lineHeight) / 2;
-      for (let i = 0; i < lines.length; i++) {
-        context.fillText(lines[i], x, startY + i * lineHeight);
-      }
+      return lines;
     }
 
-    wrapText(ctx, text, 0, 0, canvas.width - 500, 55);
+    let lines;
+    do {
+      ctx.font = `${fontSize}px BillboardFont, Arial`;
+      lineHeight = fontSize + 10;
+      lines = getLines(ctx, text, boxWidth);
 
-    ctx.restore();
+      let textHeight = lines.length * lineHeight;
+      let widest = Math.max(...lines.map(l => ctx.measureText(l).width));
+
+      if (widest <= boxWidth && textHeight <= boxHeight) break;
+      fontSize -= 2;
+    } while (fontSize > 18);
+
+    ctx.font = `${fontSize}px BillboardFont, Arial`;
+    ctx.fillStyle = "#000";
+    ctx.textAlign = "center";
+    ctx.shadowColor = "rgba(255,255,255,0.6)";
+    ctx.shadowBlur = 6;
+
+    let totalHeight = lines.length * lineHeight;
+    let startY = boxY + (boxHeight - totalHeight) / 2 + fontSize;
+
+    lines.forEach((line, i) => {
+      ctx.fillText(line, boxX + boxWidth / 2, startY + i * lineHeight);
+    });
 
     const outPath = path.join(__dirname, `billboard_${event.senderID}.png`);
     const out = fs.createWriteStream(outPath);
@@ -77,7 +90,7 @@ module.exports.run = async ({ api, event, args }) => {
     out.on("finish", () => {
       api.sendMessage(
         {
-          body: `📢 Tilted Billboard generated!\nYour text: "${text}"`,
+          body: `📢 Billboard generated!\nYour text: "${text}"`,
           attachment: fs.createReadStream(outPath)
         },
         event.threadID,
