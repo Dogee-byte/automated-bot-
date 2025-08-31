@@ -1,7 +1,6 @@
 const { createCanvas, loadImage, registerFont } = require('canvas');
 const fs = require('fs');
 const path = require('path');
-const twemoji = require('twemoji');
 
 module.exports.config = {
   name: "owner",
