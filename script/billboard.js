@@ -4,10 +4,10 @@ const path = require("path");
 
 module.exports.config = {
   name: "billboard",
-  version: "2.0.0",
+  version: "3.0.0",
   credits: "Ari",
   role: 0,
-  description: "Show your text inside the billboard",
+  description: "Put your text inside the tilted billboard",
   aliases: ["bb"],
   cooldown: 5
 };
@@ -28,20 +28,32 @@ module.exports.run = async ({ api, event, args }) => {
 
     ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
 
-    const boxX = 420;
-    const boxY = 240;
-    const boxWidth = 1080;
-    const boxHeight = 620;
+    const topLeft = { x: 300, y: 180 };
+    const topRight = { x: 1550, y: 200 };
+    const bottomRight = { x: 1480, y: 860 };
+    const bottomLeft = { x: 360, y: 820 };
 
-    let fontSize = 20; 
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(topLeft.x, topLeft.y);
+    ctx.lineTo(topRight.x, topRight.y);
+    ctx.lineTo(bottomRight.x, bottomRight.y);
+    ctx.lineTo(bottomLeft.x, bottomLeft.y);
+    ctx.closePath();
+    ctx.clip();
+    
+    const boxX = 360;
+    const boxY = 200;
+    const boxWidth = 1100;
+    const boxHeight = 600;
+
+    let fontSize = 36;
     ctx.font = `${fontSize}px BillboardFont, Arial`;
-    let lineHeight = fontSize + 10;
 
     function getLines(context, text, maxWidth) {
       const words = text.split(" ");
       let line = "";
       let lines = [];
-
       for (let n = 0; n < words.length; n++) {
         let testLine = line + words[n] + " ";
         let testWidth = context.measureText(testLine).width;
@@ -56,7 +68,7 @@ module.exports.run = async ({ api, event, args }) => {
       return lines;
     }
 
-    let lines;
+    let lines, lineHeight;
     do {
       ctx.font = `${fontSize}px BillboardFont, Arial`;
       lineHeight = fontSize + 10;
@@ -81,6 +93,8 @@ module.exports.run = async ({ api, event, args }) => {
     lines.forEach((line, i) => {
       ctx.fillText(line, boxX + boxWidth / 2, startY + i * lineHeight);
     });
+
+    ctx.restore();
 
     const outPath = path.join(__dirname, `billboard_${event.senderID}.png`);
     const out = fs.createWriteStream(outPath);
