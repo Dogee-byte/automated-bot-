@@ -1,13 +1,11 @@
-const fs = require('fs');
-const path = require('path');
-const { createCanvas, loadImage } = require('canvas');
+const axios = require('axios');
 
 module.exports.config = {
   name: "billboard",
-  version: "2.1.0",
+  version: "1.0.0",
   role: 0,
-  credits: "vern + ikaw",
-  description: "Generate a billboard image with custom text inside the board.",
+  credits: "vern",
+  description: "Generate a billboard image with your custom text using the Ace API.",
   usage: "/billboard <your message>",
   prefix: true,
   cooldowns: 3,
@@ -17,86 +15,41 @@ module.exports.config = {
 module.exports.run = async function ({ api, event, args }) {
   const { threadID, messageID } = event;
   const text = args.join(' ').trim();
-  const prefix = "/";
+  const prefix = "/"; // Update if dynamic prefix is used
 
   if (!text) {
-    return api.sendMessage(
-      `📌 Usage: ${prefix}billboard <your message>\n💬 Example: ${prefix}billboard Hello World!`,
-      threadID, messageID
-    );
+    const usageMessage = `════『 𝗕𝗜𝗟𝗟𝗕𝗢𝗔𝗥𝗗 』════\n\n` +
+      `⚠️ Please provide the message for your billboard.\n\n` +
+      `📌 Usage: ${prefix}billboard <your message>\n` +
+      `💬 Example: ${prefix}billboard Hello, World!\n\n` +
+      `> Thank you for using Billboard Generator!`;
+
+    return api.sendMessage(usageMessage, threadID, messageID);
   }
 
   try {
-    // base image path (yung pinakita mong billboard picture)
-    const basePath = path.join(__dirname, "cache", "https://files.catbox.moe/8w3jif.jpeg");
-    if (!fs.existsSync(basePath)) {
-      return api.sendMessage("🚫 Wala pang base image sa cache/billboard_base.jpg", threadID, messageID);
-    }
+    const waitMsg = `════『 𝗕𝗜𝗟𝗟𝗕𝗢𝗔𝗥𝗗 』════\n\n` +
+      `🖼️ Generating billboard for: "${text}"\nPlease wait a moment...`;
+    await api.sendMessage(waitMsg, threadID, messageID);
 
-    // Load base image
-    const baseImage = await loadImage(basePath);
-    const canvas = createCanvas(baseImage.width, baseImage.height);
-    const ctx = canvas.getContext("2d");
+    // Correct URL (fixed duplicated ?text=)
+    const apiUrl = `https://ace-rest-api.onrender.com/api/billboard?text=${encodeURIComponent(text)}`;
 
-    // Draw base image
-    ctx.drawImage(baseImage, 0, 0);
+    const response = await axios.get(apiUrl, { responseType: 'stream' });
 
-    // === Billboard rectangle area (approx) ===
-    const rectX = 90;   // left margin
-    const rectY = 80;   // top margin
-    const rectW = 620;  // width ng billboard
-    const rectH = 320;  // height ng billboard
-
-    // === Text style ===
-    ctx.font = "bold 50px Arial";
-    ctx.fillStyle = "white";       // main text color
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-
-    // Shadow / outline para mas visible
-    ctx.shadowColor = "black";
-    ctx.shadowBlur = 6;
-    ctx.lineWidth = 4;
-
-    // === Word-wrap ===
-    const maxWidth = rectW - 40; // margin sa gilid
-    const lineHeight = 60;
-    const words = text.split(" ");
-    let lines = [];
-    let currentLine = words[0];
-
-    for (let i = 1; i < words.length; i++) {
-      let word = words[i];
-      let width = ctx.measureText(currentLine + " " + word).width;
-      if (width < maxWidth) {
-        currentLine += " " + word;
-      } else {
-        lines.push(currentLine);
-        currentLine = word;
-      }
-    }
-    lines.push(currentLine);
-
-    // Center vertically sa loob ng billboard
-    const startY = rectY + rectH / 2 - (lines.length * lineHeight) / 2;
-
-    lines.forEach((line, i) => {
-      ctx.fillText(line, rectX + rectW / 2, startY + i * lineHeight);
-    });
-
-    // === Save output ===
-    const outPath = path.join(__dirname, "cache", "billboard_out.jpg");
-    const buffer = canvas.toBuffer("image/jpeg");
-    fs.writeFileSync(outPath, buffer);
-
-    // Send result
     return api.sendMessage({
-      body: `🖼️ Billboard created!\n\n"${text}"`,
-      attachment: fs.createReadStream(outPath)
+      body: `════『 𝗕𝗜𝗟𝗟𝗕𝗢𝗔𝗥𝗗 』════\n\nHere's your generated billboard!`,
+      attachment: response.data
     }, threadID, messageID);
 
-  } catch (err) {
-    console.error("Billboard error:", err);
-    return api.sendMessage("❌ Failed to generate billboard image.", threadID, messageID);
+  } catch (error) {
+    console.error('❌ Billboard error:', error);
+
+    const errorMessage = `════『 𝗘𝗥𝗥𝗢𝗥 』════\n\n` +
+      `🚫 Failed to generate billboard.\n` +
+      `🔧 Reason: ${error.response?.data?.message || error.message || 'Unknown error'}\n\n` +
+      `Please try again later.`;
+
+    return api.sendMessage(errorMessage, threadID, messageID);
   }
 };
