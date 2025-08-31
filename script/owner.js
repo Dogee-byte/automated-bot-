@@ -48,7 +48,7 @@ module.exports.run = async ({ api, event }) => {
 
     ctx.fillStyle = "#e5e5e5";
     ctx.font = "22px Poppins";
-    ctx.fillText(" Full Stack Coder • Creator of Futuristic Bots", 300, 260);
+    ctx.fillText(" Full Stack Coder • Creator of Bots", 300, 260);
     ctx.fillText(" Always Online • Innovating Everyday", 300, 300);
 
     const path = __dirname + "/cache/owner_card.png";
