@@ -4,10 +4,10 @@ const fs = require("fs-extra");
 
 module.exports.config = {
   name: "biliboard",
-  version: "1.1.0",
+  version: "1.2.0",
   hasPermssion: 0,
-  credits: "??/converted by ari",
-  description: "put text on billboard ",
+  credits: "?? / converted by ari",
+  description: "put text on billboard",
   usages: "[text]",
   cooldowns: 5
 };
@@ -43,7 +43,9 @@ module.exports.run = async function({ api, event, args }) {
   const { threadID, messageID } = event;
   try {
     const text = args.join(" ");
-    if (!text) return api.sendMessage("⚠️ no image detect", threadID, messageID);
+    if (!text) return api.sendMessage("⚠️ Please enter text to put on the billboard.", threadID, messageID);
+
+    api.sendMessage("⏳ Generating your billboard, please wait...", threadID, messageID);
 
     const imgURL = "https://i.imgur.com/aOZUbNm.jpg"; 
     const pathImg = __dirname + "/cache/biliboard.jpg";
@@ -78,13 +80,13 @@ module.exports.run = async function({ api, event, args }) {
     fs.writeFileSync(pathImg, imageBuffer);
 
     return api.sendMessage(
-      { attachment: fs.createReadStream(pathImg) },
+      { body: "✅ Here’s your billboard:", attachment: fs.createReadStream(pathImg) },
       threadID,
       () => fs.unlinkSync(pathImg),
       messageID
     );
   } catch (e) {
     console.error(e);
-    return api.sendMessage("❌ error making billboard", threadID, messageID);
+    return api.sendMessage("❌ Error making billboard.", threadID, messageID);
   }
 };
