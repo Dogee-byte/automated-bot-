@@ -28,7 +28,7 @@ module.exports.run = async function ({ api, event, args }) {
 
   try {
     // base image path (yung pinakita mong billboard picture)
-    const basePath = path.join(__dirname, "cache", "https://i.imgur.com/1l75057.jpg");
+    const basePath = path.join(__dirname, "cache", "https://files.catbox.moe/8w3jif.jpeg");
     if (!fs.existsSync(basePath)) {
       return api.sendMessage("🚫 Wala pang base image sa cache/billboard_base.jpg", threadID, messageID);
     }
