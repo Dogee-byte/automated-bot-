@@ -95,9 +95,12 @@ module.exports.handleEvent = async function ({ api, event }) {
         const userID = participant.userFbId || participant.userId || participant.id;
         if (!userID) continue;
 
-        const avatarURL = `https://graph.facebook.com/${userID}/picture?width=300&height=300`;
-        const avatarImg = await loadImage(avatarURL);
-
+        const getAvatar = async (uid) => {
+        const url = `https://graph.facebook.com/${uid}/picture?height=300&width=300&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
+        const response = await axios.get(url, { responseType: "arraybuffer" });
+        const imageBuffer = Buffer.from(response.data, "binary");
+        return await loadImage(`data:image/png;base64,${imageBuffer.toString("base64")}`);
+    }
         ctx.save();
         ctx.beginPath();
         ctx.arc(startX + avatarSize, height / 2 - 40, avatarSize, 0, Math.PI * 2);
