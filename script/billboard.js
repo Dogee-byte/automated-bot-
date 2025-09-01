@@ -40,7 +40,7 @@ module.exports.wrapText = (ctx, text, maxWidth) => {
   });
 };
 
-module.exports.onStart = async function ({ message, args, event, usersData }) {
+module.exports.run = async function ({ message, args, event, usersData }) {
   const avatarPath = __dirname + "/cache/avt.png";
   const outputPath = __dirname + "/cache/wew.png";
   const text = args.join(" ");
