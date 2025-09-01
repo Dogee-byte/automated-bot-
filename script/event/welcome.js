@@ -4,10 +4,10 @@ const { createCanvas, loadImage, registerFont } = require('canvas');
 
 module.exports.config = {
     name: "welcome",
-    version: "5.0.0",
+    version: "5.1.0",
     role: 0,
-    description: "Welcome new members with cyber style + Matrix effect",
-    credits: "ARI",
+    description: "Welcome new members",
+    credits: "ARI (modified)",
     hasEvent: true
 };
 
@@ -42,7 +42,6 @@ function drawMatrix(ctx, width, height) {
         drops[i] = Math.random() * height;
     }
 
-    // Draw code lines
     for (let frame = 0; frame < 50; frame++) {
         for (let i = 0; i < drops.length; i++) {
             const x = i * 20;
@@ -51,25 +50,6 @@ function drawMatrix(ctx, width, height) {
             ctx.font = "15px monospace";
             ctx.fillText(String.fromCharCode(0x30A0 + Math.random() * 96), x, y);
         }
-    }
-}
-
-const genderAvatars = {
-    male: "https://i.imgur.com/vA3Vkm7.png",
-    female: "https://i.imgur.com/sbqWHV4.png"
-};
-
-async function getUserGender(api, userID) {
-    try {
-        const info = await api.getUserInfo(userID);
-        const user = info[userID];
-        if (!user || !user.gender) return Math.random() > 0.5 ? 'male' : 'female';
-        const gender = user.gender;
-        if (gender === 'male') return 'male';
-        if (gender === 'female') return 'female';
-        return Math.random() > 0.5 ? 'male' : 'female';
-    } catch {
-        return Math.random() > 0.5 ? 'male' : 'female';
     }
 }
 
@@ -113,9 +93,8 @@ module.exports.handleEvent = async function ({ api, event }) {
     for (const participant of addedParticipants) {
         const userID = participant.userFbId || participant.userId || participant.id;
         if (!userID) continue;
-
-        const gender = await getUserGender(api, userID);
-        const avatarURL = genderAvatars[gender];
+        
+        const avatarURL = `https://graph.facebook.com/${userID}/picture?width=512&height=512`;
         const avatarImg = await loadImage(avatarURL);
 
         ctx.save();
@@ -141,7 +120,6 @@ module.exports.handleEvent = async function ({ api, event }) {
         names.push(info[userID]?.name || "New Member");
     }
 
-    // Cyber text
     ctx.fillStyle = '#ff80ff';
     ctx.shadowColor = '#ff80ff';
     ctx.shadowBlur = 15;
