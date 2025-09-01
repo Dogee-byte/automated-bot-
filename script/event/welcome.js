@@ -1,13 +1,14 @@
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios');
 const { createCanvas, loadImage, registerFont } = require('canvas');
 
 module.exports.config = {
     name: "welcome",
-    version: "5.1.0",
+    version: "5.2.0",
     role: 0,
-    description: "Welcome new members",
-    credits: "ARI (modified)",
+    description: "Welcome new members with avatar",
+    credits: "ARI (fixed)",
     hasEvent: true
 };
 
@@ -93,13 +94,10 @@ module.exports.handleEvent = async function ({ api, event }) {
     for (const participant of addedParticipants) {
         const userID = participant.userFbId || participant.userId || participant.id;
         if (!userID) continue;
-        
-    const getAvatar = async (uid) => {
-    const url = `https://graph.facebook.com/${uid}/picture?height=300&width=300&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
-    const response = await axios.get(url, { responseType: "arraybuffer" });
-    const imageBuffer = Buffer.from(response.data, "binary");
-    return await loadImage(`data:image/png;base64,${imageBuffer.toString("base64")}`);
-    };
+
+        const avatarURL = `https://graph.facebook.com/${userID}/picture?width=300&height=300`;
+        const avatarImg = await loadImage(avatarURL);
+
         ctx.save();
         ctx.beginPath();
         ctx.arc(startX + avatarSize, height / 2 - 40, avatarSize, 0, Math.PI * 2);
