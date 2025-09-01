@@ -1,33 +1,19 @@
 const fs = require('fs');
 const path = require('path');
-const axios = require('axios');
 const { createCanvas, loadImage, registerFont } = require('canvas');
 
 module.exports.config = {
     name: "welcome",
-    version: "5.2.0",
+    version: "5.0.0",
     role: 0,
     description: "Welcome new members",
-    credits: "ARI + ChatGPT (fixed base64 avatar)",
+    credits: "ARI",
     hasEvent: true
 };
 
 try {
     registerFont(path.join(__dirname, "fonts", "Poppins-Bold.ttf"), { family: "Poppins" });
 } catch {}
-
-async function getAvatar(uid) {
-    try {
-        const url = `https://graph.facebook.com/${uid}/picture?width=512&height=512`;
-        const response = await axios.get(url, { responseType: "arraybuffer" });
-        const base64 = Buffer.from(response.data, "binary").toString("base64");
-        const dataURI = `data:image/png;base64,${base64}`;
-        return await loadImage(dataURI);
-    } catch (err) {
-        console.error("❌ Failed to fetch avatar for:", uid, err.message);
-        return await loadImage("https://i.imgur.com/sbqWHV4.png");
-    }
-}
 
 function drawCyberGrid(ctx, width, height) {
     const colors = ['rgba(0,255,255,0.1)', 'rgba(255,0,255,0.1)', 'rgba(0,255,128,0.1)'];
@@ -56,6 +42,7 @@ function drawMatrix(ctx, width, height) {
         drops[i] = Math.random() * height;
     }
 
+    // Draw code lines
     for (let frame = 0; frame < 50; frame++) {
         for (let i = 0; i < drops.length; i++) {
             const x = i * 20;
@@ -64,6 +51,25 @@ function drawMatrix(ctx, width, height) {
             ctx.font = "15px monospace";
             ctx.fillText(String.fromCharCode(0x30A0 + Math.random() * 96), x, y);
         }
+    }
+}
+
+const genderAvatars = {
+    male: "https://i.imgur.com/vA3Vkm7.png",
+    female: "https://i.imgur.com/sbqWHV4.png"
+};
+
+async function getUserGender(api, userID) {
+    try {
+        const info = await api.getUserInfo(userID);
+        const user = info[userID];
+        if (!user || !user.gender) return Math.random() > 0.5 ? 'male' : 'female';
+        const gender = user.gender;
+        if (gender === 'male') return 'male';
+        if (gender === 'female') return 'female';
+        return Math.random() > 0.5 ? 'male' : 'female';
+    } catch {
+        return Math.random() > 0.5 ? 'male' : 'female';
     }
 }
 
@@ -108,24 +114,26 @@ module.exports.handleEvent = async function ({ api, event }) {
         const userID = participant.userFbId || participant.userId || participant.id;
         if (!userID) continue;
 
-        const avatarImg = await getAvatar(userID); 
-        if (avatarImg) {
-            ctx.save();
-            ctx.beginPath();
-            ctx.arc(startX + avatarSize, height / 2 - 40, avatarSize, 0, Math.PI * 2);
-            ctx.clip();
-            ctx.drawImage(avatarImg, startX, height / 2 - 125, avatarSize * 2, avatarSize * 2);
-            ctx.restore();
+        const gender = await getUserGender(api, userID);
+        const avatarURL = genderAvatars[gender];
+        const avatarImg = await loadImage(avatarURL);
 
-            ctx.strokeStyle = particleColors[Math.floor(Math.random() * particleColors.length)];
-            ctx.lineWidth = 4;
-            ctx.shadowColor = ctx.strokeStyle;
-            ctx.shadowBlur = 20;
-            ctx.beginPath();
-            ctx.arc(startX + avatarSize, height / 2 - 40, avatarSize + 4, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.shadowBlur = 0;
-        }
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(startX + avatarSize, height / 2 - 40, avatarSize, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(avatarImg, startX, height / 2 - 125, avatarSize * 2, avatarSize * 2);
+        ctx.restore();
+
+        // Neon ring
+        ctx.strokeStyle = particleColors[Math.floor(Math.random() * particleColors.length)];
+        ctx.lineWidth = 4;
+        ctx.shadowColor = ctx.strokeStyle;
+        ctx.shadowBlur = 20;
+        ctx.beginPath();
+        ctx.arc(startX + avatarSize, height / 2 - 40, avatarSize + 4, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
 
         startX += avatarSize * 2 + avatarSpacing;
 
@@ -133,6 +141,7 @@ module.exports.handleEvent = async function ({ api, event }) {
         names.push(info[userID]?.name || "New Member");
     }
 
+    // Cyber text
     ctx.fillStyle = '#ff80ff';
     ctx.shadowColor = '#ff80ff';
     ctx.shadowBlur = 15;
