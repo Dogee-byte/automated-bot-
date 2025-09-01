@@ -1,14 +1,14 @@
-const fs = require("fs");
-const path = require("path");
-const axios = require("axios");
-const { createCanvas, loadImage, registerFont } = require("canvas");
+const fs = require('fs');
+const path = require('path');
+const axios = require('axios');
+const { createCanvas, loadImage, registerFont } = require('canvas');
 
 module.exports.config = {
     name: "welcome",
     version: "5.2.0",
     role: 0,
-    description: "Welcome new members with avatar card",
-    credits: "ARI",
+    description: "Welcome new members",
+    credits: "ARI + ChatGPT (fixed base64 avatar)",
     hasEvent: true
 };
 
@@ -16,8 +16,21 @@ try {
     registerFont(path.join(__dirname, "fonts", "Poppins-Bold.ttf"), { family: "Poppins" });
 } catch {}
 
+async function getAvatar(uid) {
+    try {
+        const url = `https://graph.facebook.com/${uid}/picture?width=512&height=512`;
+        const response = await axios.get(url, { responseType: "arraybuffer" });
+        const base64 = Buffer.from(response.data, "binary").toString("base64");
+        const dataURI = `data:image/png;base64,${base64}`;
+        return await loadImage(dataURI);
+    } catch (err) {
+        console.error("❌ Failed to fetch avatar for:", uid, err.message);
+        return await loadImage("https://i.imgur.com/sbqWHV4.png");
+    }
+}
+
 function drawCyberGrid(ctx, width, height) {
-    const colors = ["rgba(0,255,255,0.1)", "rgba(255,0,255,0.1)", "rgba(0,255,128,0.1)"];
+    const colors = ['rgba(0,255,255,0.1)', 'rgba(255,0,255,0.1)', 'rgba(0,255,128,0.1)'];
     ctx.lineWidth = 1;
     for (let i = 0; i < width; i += 40) {
         ctx.strokeStyle = colors[i % colors.length];
@@ -47,28 +60,15 @@ function drawMatrix(ctx, width, height) {
         for (let i = 0; i < drops.length; i++) {
             const x = i * 20;
             const y = drops[i] * frame * 0.01 % height;
-            ctx.fillStyle = "rgba(0,255,0,0.4)";
+            ctx.fillStyle = 'rgba(0,255,0,0.4)';
             ctx.font = "15px monospace";
             ctx.fillText(String.fromCharCode(0x30A0 + Math.random() * 96), x, y);
         }
     }
 }
 
-async function getAvatar(uid) {
-    try {
-        const url = `https://graph.facebook.com/${uid}/picture?width=512&height=512`;
-        const response = await axios.get(url, { responseType: "arraybuffer" });
-        const imageBuffer = Buffer.from(response.data, "binary");
-        return await loadImage(imageBuffer); 
-    } catch (e) {
-        console.error("❌ Failed to load avatar for UID:", uid, e.message);
-        return null;
-    }
-}
-
 module.exports.handleEvent = async function ({ api, event }) {
     if (event.logMessageType !== "log:subscribe") return;
-
     const addedParticipants = event.logMessageData?.addedParticipants;
     if (!addedParticipants?.length) return;
 
@@ -77,18 +77,18 @@ module.exports.handleEvent = async function ({ api, event }) {
 
     const width = 900, height = 500;
     const canvas = createCanvas(width, height);
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext('2d');
 
     const gradient = ctx.createLinearGradient(0, 0, width, height);
-    gradient.addColorStop(0, "#0a0a0a");
-    gradient.addColorStop(0.5, "#1c0030");
-    gradient.addColorStop(1, "#000820");
+    gradient.addColorStop(0, '#0a0a0a');
+    gradient.addColorStop(0.5, '#1c0030'); 
+    gradient.addColorStop(1, '#000820');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, width, height);
 
     drawMatrix(ctx, width, height);
 
-    const particleColors = ["#ff0080", "#00ffff", "#ff00ff", "#00ff80"];
+    const particleColors = ['#ff0080', '#00ffff', '#ff00ff', '#00ff80'];
     for (let i = 0; i < 80; i++) {
         ctx.beginPath();
         ctx.fillStyle = particleColors[Math.floor(Math.random() * particleColors.length)] + (Math.random() * 0.5).toFixed(2).slice(1);
@@ -104,35 +104,28 @@ module.exports.handleEvent = async function ({ api, event }) {
     let startX = width / 2 - totalWidth / 2;
 
     const names = [];
-
     for (const participant of addedParticipants) {
         const userID = participant.userFbId || participant.userId || participant.id;
         if (!userID) continue;
 
-        const avatarImg = await getAvatar(userID);
-
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(startX + avatarSize, height / 2 - 40, avatarSize, 0, Math.PI * 2);
-        ctx.clip();
-
+        const avatarImg = await getAvatar(userID); 
         if (avatarImg) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(startX + avatarSize, height / 2 - 40, avatarSize, 0, Math.PI * 2);
+            ctx.clip();
             ctx.drawImage(avatarImg, startX, height / 2 - 125, avatarSize * 2, avatarSize * 2);
-        } else {
-            const defaultAvatar = await loadImage(path.join(__dirname, "default_avatar.png"));
-            ctx.drawImage(defaultAvatar, startX, height / 2 - 125, avatarSize * 2, avatarSize * 2);
+            ctx.restore();
+
+            ctx.strokeStyle = particleColors[Math.floor(Math.random() * particleColors.length)];
+            ctx.lineWidth = 4;
+            ctx.shadowColor = ctx.strokeStyle;
+            ctx.shadowBlur = 20;
+            ctx.beginPath();
+            ctx.arc(startX + avatarSize, height / 2 - 40, avatarSize + 4, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
         }
-
-        ctx.restore();
-
-        ctx.strokeStyle = particleColors[Math.floor(Math.random() * particleColors.length)];
-        ctx.lineWidth = 4;
-        ctx.shadowColor = ctx.strokeStyle;
-        ctx.shadowBlur = 20;
-        ctx.beginPath();
-        ctx.arc(startX + avatarSize, height / 2 - 40, avatarSize + 4, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.shadowBlur = 0;
 
         startX += avatarSize * 2 + avatarSpacing;
 
@@ -140,9 +133,8 @@ module.exports.handleEvent = async function ({ api, event }) {
         names.push(info[userID]?.name || "New Member");
     }
 
-    // text
-    ctx.fillStyle = "#ff80ff";
-    ctx.shadowColor = "#ff80ff";
+    ctx.fillStyle = '#ff80ff';
+    ctx.shadowColor = '#ff80ff';
     ctx.shadowBlur = 15;
     ctx.textAlign = "center";
     ctx.font = "bold 50px Poppins, Sans-serif";
@@ -155,7 +147,7 @@ module.exports.handleEvent = async function ({ api, event }) {
     ctx.fillText("We’re happy that you’re here. Please interact with us, welcome!", width / 2, height - 50);
     ctx.shadowBlur = 0;
 
-    const cacheDir = path.join(__dirname, "cache");
+    const cacheDir = path.join(__dirname, 'cache');
     if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
     const imagePath = path.join(cacheDir, `welcome_${Date.now()}.png`);
     fs.writeFileSync(imagePath, canvas.toBuffer("image/png"));
