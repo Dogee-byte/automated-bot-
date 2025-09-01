@@ -4,20 +4,23 @@ const fs = require("fs-extra");
 
 module.exports.config = {
   name: "billboard",
-  aliases: ["billoard"],
   version: "1.0.1",
-  author: "Clarence DK | Converted by ari",
+  role: 0,
+  author: "Clarence DK | Converted by ChatGPT",
   countDown: 5,
-  role: 0
+  shortDescription: "Edit billboard with your text",
+  longDescription: "Put your avatar and text onto a billboard template",
+  category: "image",
+  guide: "{pn} [text]"
 };
 
 module.exports.wrapText = (ctx, text, maxWidth) => {
   return new Promise(resolve => {
     if (ctx.measureText(text).width < maxWidth) return resolve([text]);
-    if (ctx.measureText('W').width > maxWidth) return resolve(null);
-    const words = text.split(' ');
+    if (ctx.measureText("W").width > maxWidth) return resolve(null);
+    const words = text.split(" ");
     const lines = [];
-    let line = '';
+    let line = "";
     while (words.length > 0) {
       let split = false;
       while (ctx.measureText(words[0]).width >= maxWidth) {
@@ -29,10 +32,11 @@ module.exports.wrapText = (ctx, text, maxWidth) => {
           words.splice(1, 0, temp.slice(-1));
         }
       }
-      if (ctx.measureText(`${line}${words[0]}`).width < maxWidth) line += `${words.shift()} `;
+      if (ctx.measureText(`${line}${words[0]}`).width < maxWidth)
+        line += `${words.shift()} `;
       else {
         lines.push(line.trim());
-        line = '';
+        line = "";
       }
       if (words.length === 0) lines.push(line.trim());
     }
@@ -40,53 +44,122 @@ module.exports.wrapText = (ctx, text, maxWidth) => {
   });
 };
 
-module.exports.run = async function ({ message, args, event, usersData }) {
-  const avatarPath = __dirname + "/cache/avt.png";
-  const outputPath = __dirname + "/cache/wew.png";
-  const text = args.join(" ");
+// 🔑 VERSION A: For Autobot builds that provide { message, args, event, usersData }
+module.exports.run = async function (ctx) {
+  try {
+    // If ctx has "message" → new Autobot style
+    if (ctx.message) {
+      const { message, args, event, usersData } = ctx;
 
-  if (!text) return message.reply("Please put a message");
+      const avatarPath = __dirname + "/cache/avt.png";
+      const outputPath = __dirname + "/cache/wew.png";
+      if (!fs.existsSync(__dirname + "/cache")) fs.mkdirSync(__dirname + "/cache");
 
-  const name = await usersData.getName(event.senderID);
-  const linkAvatar = await usersData.getAvatarUrl(event.senderID);
+      const text = args.join(" ");
+      if (!text) return message.reply("Please put a message");
 
-  const avatarBuffer = (await axios.get(linkAvatar, { responseType: "arraybuffer" })).data;
-  const baseBuffer = (await axios.get("https://imgur.com/uN7Sllp.png", { responseType: "arraybuffer" })).data;
+      const name = await usersData.getName(event.senderID);
+      const linkAvatar = await usersData.getAvatarUrl(event.senderID);
 
-  fs.writeFileSync(avatarPath, Buffer.from(avatarBuffer, "utf-8"));
-  fs.writeFileSync(outputPath, Buffer.from(baseBuffer, "utf-8"));
+      const avatarBuffer = (await axios.get(linkAvatar, { responseType: "arraybuffer" })).data;
+      const baseBuffer = (await axios.get("https://i.imgur.com/uN7Sllp.png", { responseType: "arraybuffer" })).data;
 
-  const image = await loadImage(avatarPath);
-  const baseImage = await loadImage(outputPath);
-  const canvas = createCanvas(baseImage.width, baseImage.height);
-  const ctx = canvas.getContext("2d");
+      fs.writeFileSync(avatarPath, Buffer.from(avatarBuffer, "utf-8"));
+      fs.writeFileSync(outputPath, Buffer.from(baseBuffer, "utf-8"));
 
-  ctx.drawImage(baseImage, 10, 10, canvas.width, canvas.height);
-  ctx.drawImage(image, 148, 75, 110, 110);
+      const image = await loadImage(avatarPath);
+      const baseImage = await loadImage(outputPath);
+      const canvas = createCanvas(baseImage.width, baseImage.height);
+      const ctx2d = canvas.getContext("2d");
 
-  ctx.font = "800 23px Arial";
-  ctx.fillStyle = "#ffffff";
-  ctx.textAlign = "start";
-  ctx.fillText(name, 280, 110);
+      ctx2d.drawImage(baseImage, 0, 0, canvas.width, canvas.height);
+      ctx2d.drawImage(image, 148, 75, 110, 110);
 
-  ctx.font = "400 23px Arial";
-  ctx.fillStyle = "#000000";
-  ctx.textAlign = "start";
+      ctx2d.font = "800 23px Arial";
+      ctx2d.fillStyle = "#ffffff";
+      ctx2d.textAlign = "start";
+      ctx2d.fillText(name, 280, 110);
 
-  let fontSize = 55;
-  while (ctx.measureText(text).width > 600) {
-    fontSize--;
-    ctx.font = `400 ${fontSize}px Arial, sans-serif`;
+      ctx2d.font = "400 23px Arial";
+      ctx2d.fillStyle = "#000000";
+      ctx2d.textAlign = "start";
+
+      let fontSize = 55;
+      while (ctx2d.measureText(text).width > 600) {
+        fontSize--;
+        ctx2d.font = `400 ${fontSize}px Arial, sans-serif`;
+      }
+
+      const lines = await this.wrapText(ctx2d, text, 250);
+      ctx2d.fillText(lines.join("\n"), 280, 145);
+
+      const imageBuffer = canvas.toBuffer();
+      fs.writeFileSync(outputPath, imageBuffer);
+      fs.removeSync(avatarPath);
+
+      return message.reply({ attachment: fs.createReadStream(outputPath) }, () => fs.unlinkSync(outputPath));
+    }
+
+    // 🔑 VERSION B: For old builds that use { api, event, args, Users }
+    else {
+      const { api, event, args, Users } = ctx;
+
+      const avatarPath = __dirname + "/cache/avt.png";
+      const outputPath = __dirname + "/cache/wew.png";
+      if (!fs.existsSync(__dirname + "/cache")) fs.mkdirSync(__dirname + "/cache");
+
+      const text = args.join(" ");
+      if (!text) return api.sendMessage("Please put a message", event.threadID, event.messageID);
+
+      const name = await Users.getNameUser(event.senderID);
+      const linkAvatar = (await api.getUserInfo(event.senderID))[event.senderID].thumbSrc;
+
+      const avatarBuffer = (await axios.get(linkAvatar, { responseType: "arraybuffer" })).data;
+      const baseBuffer = (await axios.get("https://i.imgur.com/uN7Sllp.png", { responseType: "arraybuffer" })).data;
+
+      fs.writeFileSync(avatarPath, Buffer.from(avatarBuffer, "utf-8"));
+      fs.writeFileSync(outputPath, Buffer.from(baseBuffer, "utf-8"));
+
+      const image = await loadImage(avatarPath);
+      const baseImage = await loadImage(outputPath);
+      const canvas = createCanvas(baseImage.width, baseImage.height);
+      const ctx2d = canvas.getContext("2d");
+
+      ctx2d.drawImage(baseImage, 0, 0, canvas.width, canvas.height);
+      ctx2d.drawImage(image, 148, 75, 110, 110);
+
+      ctx2d.font = "800 23px Arial";
+      ctx2d.fillStyle = "#ffffff";
+      ctx2d.textAlign = "start";
+      ctx2d.fillText(name, 280, 110);
+
+      ctx2d.font = "400 23px Arial";
+      ctx2d.fillStyle = "#000000";
+      ctx2d.textAlign = "start";
+
+      let fontSize = 55;
+      while (ctx2d.measureText(text).width > 600) {
+        fontSize--;
+        ctx2d.font = `400 ${fontSize}px Arial, sans-serif`;
+      }
+
+      const lines = await this.wrapText(ctx2d, text, 250);
+      ctx2d.fillText(lines.join("\n"), 280, 145);
+
+      const imageBuffer = canvas.toBuffer();
+      fs.writeFileSync(outputPath, imageBuffer);
+      fs.removeSync(avatarPath);
+
+      return api.sendMessage(
+        { attachment: fs.createReadStream(outputPath) },
+        event.threadID,
+        () => fs.unlinkSync(outputPath),
+        event.messageID
+      );
+    }
+  } catch (err) {
+    console.error(err);
+    if (ctx.message) return ctx.message.reply("❌ Error while generating billboard.");
+    else return ctx.api.sendMessage("❌ Error while generating billboard.", ctx.event.threadID, ctx.event.messageID);
   }
-
-  const lines = await this.wrapText(ctx, text, 250);
-  ctx.fillText(lines.join("\n"), 280, 145);
-
-  const imageBuffer = canvas.toBuffer();
-  fs.writeFileSync(outputPath, imageBuffer);
-  fs.removeSync(avatarPath);
-
-  return message.reply({
-    attachment: fs.createReadStream(outputPath)
-  }, () => fs.unlinkSync(outputPath));
 };
