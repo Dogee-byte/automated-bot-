@@ -4,21 +4,28 @@ const path = require("path");
 
 module.exports.config = {
   name: "uptime",
-  version: "1.0.0",
+  version: "1.1.0",
   role: 0,
   cooldown: 5,
   aliases: ["ut", "up"],
-  description: "HAHAHAH TITE",
+  description: "Shows how long the bot has been online.",
   usage: "[uptime]",
   credits: "ari"
 };
 
-module.exports.run = async ({ api, event, args }) => {
+module.exports.run = async ({ api, event }) => {
   try {
-    const uptimeSec = process.uptime();
-    const hours = Math.floor(uptimeSec / 3600);
-    const minutes = Math.floor((uptimeSec % 3600) / 60);
-    const seconds = Math.floor(uptimeSec % 60);
+    const uptimeMs = Date.now() - global.startTime;
+    const hours = Math.floor(uptimeMs / (1000 * 60 * 60));
+    const minutes = Math.floor((uptimeMs % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((uptimeMs % (1000 * 60)) / 1000);
+
+    const startDate = new Date(global.startTime);
+    const options = { 
+      year: "numeric", month: "long", day: "numeric", 
+      hour: "2-digit", minute: "2-digit", second: "2-digit" 
+    };
+    const formattedStart = startDate.toLocaleString("en-US", options);
 
     const botname = "Echo_AI";
     const instag = "..."; 
@@ -34,7 +41,7 @@ module.exports.run = async ({ api, event, args }) => {
 
     api.sendMessage(
       {
-        body: `⏱ Bot Uptime: ${hours}h ${minutes}m ${seconds}s`,
+        body: `⏱ Bot Uptime: ${hours}h ${minutes}m ${seconds}s\n📅 Online Since: ${formattedStart}`,
         attachment: fs.createReadStream(imgPath)
       },
       event.threadID,
