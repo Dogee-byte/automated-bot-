@@ -6,7 +6,7 @@ module.exports.config = {
   name: "billboard",
   version: "1.0.1",
   role: 0,
-  author: "Clarence DK | Converted by ChatGPT",
+  author: "Clarence DK | Converted by Ari",
   countDown: 5,
   shortDescription: "Edit billboard with your text",
   longDescription: "Put your avatar and text onto a billboard template",
@@ -44,10 +44,8 @@ module.exports.wrapText = (ctx, text, maxWidth) => {
   });
 };
 
-// 🔑 VERSION A: For Autobot builds that provide { message, args, event, usersData }
 module.exports.run = async function (ctx) {
   try {
-    // If ctx has "message" → new Autobot style
     if (ctx.message) {
       const { message, args, event, usersData } = ctx;
 
@@ -62,7 +60,7 @@ module.exports.run = async function (ctx) {
       const linkAvatar = await usersData.getAvatarUrl(event.senderID);
 
       const avatarBuffer = (await axios.get(linkAvatar, { responseType: "arraybuffer" })).data;
-      const baseBuffer = (await axios.get("https://i.imgur.com/uN7Sllp.png", { responseType: "arraybuffer" })).data;
+      const baseBuffer = (await axios.get("https://i.imgur.com/uN7Sllp.jpg", { responseType: "arraybuffer" })).data;
 
       fs.writeFileSync(avatarPath, Buffer.from(avatarBuffer, "utf-8"));
       fs.writeFileSync(outputPath, Buffer.from(baseBuffer, "utf-8"));
@@ -100,7 +98,6 @@ module.exports.run = async function (ctx) {
       return message.reply({ attachment: fs.createReadStream(outputPath) }, () => fs.unlinkSync(outputPath));
     }
 
-    // 🔑 VERSION B: For old builds that use { api, event, args, Users }
     else {
       const { api, event, args, Users } = ctx;
 
@@ -115,7 +112,7 @@ module.exports.run = async function (ctx) {
       const linkAvatar = (await api.getUserInfo(event.senderID))[event.senderID].thumbSrc;
 
       const avatarBuffer = (await axios.get(linkAvatar, { responseType: "arraybuffer" })).data;
-      const baseBuffer = (await axios.get("https://i.imgur.com/uN7Sllp.png", { responseType: "arraybuffer" })).data;
+      const baseBuffer = (await axios.get("https://i.imgur.com/uN7Sllp.jpg", { responseType: "arraybuffer" })).data;
 
       fs.writeFileSync(avatarPath, Buffer.from(avatarBuffer, "utf-8"));
       fs.writeFileSync(outputPath, Buffer.from(baseBuffer, "utf-8"));
