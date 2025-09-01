@@ -8,24 +8,27 @@ function formatUptime(seconds) {
 }
 
 module.exports.config = {
-  name: "uptime", 
+  name: "uptime",
   version: "1.0.0",
   author: "Ari",
-  countDown: 5, 
-  role: 1, 
+  countDown: 5,
+  role: 0,
   shortDescription: "Check bot uptime",
-  longDescription: "Shows how long the bot has been online and fetches uptime data.",
+  longDescription: "Shows how long the bot has been online and fetches uptime API data.",
   category: "system",
+  guide: {
+    en: "{pn}"
+  }
 };
 
-module.exports.run = async function ({ message }) {
+module.exports.run = async function ({ api, event }) {
   try {
     const uptimeSeconds = process.uptime();
     const { hours, minutes, secs } = formatUptime(uptimeSeconds);
 
     const url = "https://kaiz-apis.gleeze.com/api/uptime";
     const params = {
-      instag: "...", 
+      instag: "your_instagram_here",
       ghub: "ari000",
       fb: "Ari",
       hours,
@@ -38,16 +41,17 @@ module.exports.run = async function ({ message }) {
     const response = await axios.get(url, { params });
     const data = response.data;
 
-    message.reply(
+    const replyText =
       `🤖 Bot Uptime (${params.botname}):\n` +
       `⏳ ${hours}h ${minutes}m ${secs}s\n` +
       `🔗 GitHub: ${params.ghub}\n` +
       `📘 FB: ${params.fb}\n` +
       `📸 IG: ${params.instag}\n\n` +
-      `Response: ${JSON.stringify(data)}`
-    );
+      `API Response: ${JSON.stringify(data)}`;
+
+    api.sendMessage(replyText, event.threadID, event.messageID);
   } catch (err) {
     console.error("Error fetching uptime:", err.message);
-    message.reply("❌ Failed to fetch uptime data.");
+    api.sendMessage("❌ Failed to fetch uptime data.", event.threadID, event.messageID);
   }
 };
