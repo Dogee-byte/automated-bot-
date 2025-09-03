@@ -13,22 +13,23 @@ let config = {};
 try {
   config = JSON.parse(fs.readFileSync(path.join(__dirname, "../config.json")));
 } catch (e) {
-  config.prefix = " ";
+  config.prefix = "";
   config.botName = "🤖 | 𝙴𝚌𝚑𝚘 𝙰𝙸";
 }
 
 module.exports.config = {
   name: "prefix",
-  version: "4.0.0",
+  version: "4.0.1",
   role: 0,
   description: "Displays the bot's prefix with stylish Canvas card (emoji + gradient).",
   prefix: true,
   premium: false,
-  credits: "ari x gpt",
+  credits: "ari POGI",
   cooldowns: 5,
   category: "info"
 };
 
+// 🎨 Gradients
 const gradients = [
   ["#1e3a8a", "#0f172a"],
   ["#9333ea", "#4c1d95"],
@@ -38,7 +39,20 @@ const gradients = [
   ["#0ea5e9", "#0c4a6e"]
 ];
 
-const emojiSet = ["🤖", "✨", "⚡", "🔥", "🆔", "📌", "🚀", "🎉", "🌟", "💡"];
+const emojiSet = ["🤖", "✨", "⚡", "🔥", "📌", "🆔", "🚀", "🎉", "🌟", "💡"];
+
+function roundRect(ctx, x, y, w, h, r) {
+  if (w < 2 * r) r = w / 2;
+  if (h < 2 * r) r = h / 2;
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+  return ctx;
+}
 
 async function makePrefixCard(botPrefix, botName) {
   const width = 700;
@@ -52,7 +66,7 @@ async function makePrefixCard(botPrefix, botName) {
   gradient.addColorStop(1, color2);
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
-  
+
   const emojiCount = 15;
   for (let i = 0; i < emojiCount; i++) {
     const emoji = emojiSet[Math.floor(Math.random() * emojiSet.length)];
@@ -61,17 +75,17 @@ async function makePrefixCard(botPrefix, botName) {
     const size = 24 + Math.random() * 32;
 
     ctx.font = `${size}px Emoji`;
-    ctx.globalAlpha = 0.3 + Math.random() * 0.5; 
+    ctx.globalAlpha = 0.3 + Math.random() * 0.5;
     ctx.fillText(emoji, x, y);
   }
   ctx.globalAlpha = 1;
 
   ctx.fillStyle = "rgba(0,0,0,0.35)";
-  ctx.roundRect(40, 120, width - 80, 220, 25);
+  roundRect(ctx, 40, 120, width - 80, 220, 25);
   ctx.fill();
 
   try {
-    const logo = await loadImage("https://i.imgur.com/BzZ7g0C.png"); 
+    const logo = await loadImage("https://i.imgur.com/BzZ7g0C.png");
     ctx.save();
     ctx.beginPath();
     ctx.arc(width / 2, 90, 45, 0, Math.PI * 2, true);
@@ -101,19 +115,7 @@ async function makePrefixCard(botPrefix, botName) {
   ctx.fillText("✨ Enjoy chatting with me! 🚀", width / 2, 330);
 
   return canvas.toBuffer();
-  
-CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
-  if (w < 2 * r) r = w / 2;
-  if (h < 2 * r) r = h / 2;
-  this.beginPath();
-  this.moveTo(x + r, y);
-  this.arcTo(x + w, y, x + w, y + h, r);
-  this.arcTo(x + w, y + h, x, y + h, r);
-  this.arcTo(x, y + h, x, y, r);
-  this.arcTo(x, y, x + w, y, r);
-  this.closePath();
-  return this;
-};
+}
 
 module.exports.run = async function ({ api, event }) {
   const { threadID, messageID } = event;
