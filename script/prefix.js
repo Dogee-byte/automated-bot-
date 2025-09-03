@@ -13,7 +13,7 @@ let config = {};
 try {
   config = JSON.parse(fs.readFileSync(path.join(__dirname, "../config.json")));
 } catch (e) {
-  config.prefix = " ";
+  config.prefix = "< no set >";
   config.botName = "Echo AI";
 }
 
@@ -22,6 +22,7 @@ module.exports.config = {
   version: "1.0.0",
   role: 0,
   description: "bot prefix",
+  prefix: true,
   credits: "ari",
   cooldowns: 5,
   category: "info"
@@ -42,6 +43,22 @@ async function drawEmoji(ctx, url, x, y, size = 36) {
   }
 }
 
+function drawParticles(ctx, width, height, count = 40) {
+  for (let i = 0; i < count; i++) {
+    const x = Math.random() * width;
+    const y = Math.random() * height;
+    const radius = Math.random() * 3 + 1;
+    const opacity = Math.random() * 0.8 + 0.2;
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+    ctx.shadowColor = "#38bdf8";
+    ctx.shadowBlur = 15;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+}
+
 async function makeCoolCard(botPrefix, botName) {
   const width = 750, height = 430;
   const canvas = createCanvas(width, height);
@@ -54,57 +71,66 @@ async function makeCoolCard(botPrefix, botName) {
   ctx.fillStyle = bgGradient;
   ctx.fillRect(0, 0, width, height);
 
-  ctx.fillStyle = "rgba(255,255,255,0.12)";
+  drawParticles(ctx, width, height, 50);
+
+  ctx.fillStyle = "rgba(255,255,255,0.1)";
   ctx.shadowColor = "rgba(0,0,0,0.6)";
   ctx.shadowBlur = 20;
   ctx.beginPath();
-  ctx.roundRect(40, 100, width - 80, 280, 25);
+  ctx.roundRect(40, 110, width - 80, 270, 25);
   ctx.fill();
   ctx.shadowBlur = 0;
 
   try {
-    const avatar = await loadImage("https://i.imgur.com/lGxhMfB.jpeg");
+    const avatar = await loadImage("https://i.imgur.com/lGxhMfB.png");
     const centerX = width / 2;
     ctx.save();
     ctx.beginPath();
-    ctx.arc(centerX, 90, 55, 0, Math.PI * 2);
+    ctx.arc(centerX, 95, 60, 0, Math.PI * 2);
     ctx.closePath();
     ctx.strokeStyle = "#38bdf8";
     ctx.lineWidth = 6;
     ctx.shadowColor = "#0ea5e9";
-    ctx.shadowBlur = 15;
+    ctx.shadowBlur = 25;
     ctx.stroke();
     ctx.clip();
-    ctx.drawImage(avatar, centerX - 55, 35, 110, 110);
+    ctx.drawImage(avatar, centerX - 60, 35, 120, 120);
     ctx.restore();
   } catch {}
 
-  await drawEmoji(ctx, emojiMap.bot, 120, 140, 42);
+  await drawEmoji(ctx, emojiMap.bot, 120, 150, 42);
   ctx.fillStyle = "#f8fafc";
   ctx.font = "bold 34px OpenSans";
-  ctx.fillText("Bot Information", 180, 175);
+  ctx.fillText("Bot Information:", 180, 185);
 
-  await drawEmoji(ctx, emojiMap.pin, 120, 210, 38);
+  await drawEmoji(ctx, emojiMap.pin, 120, 215, 38);
   ctx.fillStyle = "#facc15";
   ctx.font = "bold 30px OpenSans";
-  ctx.fillText(`Prefix: ${botPrefix}`, 180, 240);
+  ctx.fillText(`Prefix: ${botPrefix}`, 180, 245);
 
-  await drawEmoji(ctx, emojiMap.id, 120, 270, 38);
+  await drawEmoji(ctx, emojiMap.id, 120, 275, 38);
   ctx.fillStyle = "#93c5fd";
   ctx.font = "bold 30px OpenSans";
-  ctx.fillText(`Name: ${botName}`, 180, 300);
-  
-  ctx.fillStyle = "#e2e8f0";
-  ctx.font = "italic 23px OpenSans-Regular";
+  ctx.fillText(`Name: ${botName}`, 180, 305);
+
+  const gradient = ctx.createLinearGradient(200, 0, 550, 0);
+  gradient.addColorStop(0, "#f472b6");
+  gradient.addColorStop(0.25, "#facc15");
+  gradient.addColorStop(0.5, "#4ade80");
+  gradient.addColorStop(0.75, "#60a5fa");
+  gradient.addColorStop(1, "#c084fc");
+
+  ctx.fillStyle = gradient;
+  ctx.font = "italic 20px OpenSans-Regular";
   ctx.textAlign = "center";
-  ctx.fillText("Enjoy chatting with me!", width / 2, 355);
+  ctx.fillText("Enjoy chatting with me!", width / 2, 370);
 
   return canvas.toBuffer();
 }
 
 module.exports.run = async function ({ api, event }) {
   const { threadID, messageID } = event;
-  const botPrefix = config.prefix || " ";
+  const botPrefix = config.prefix || "< no set >";
   const botName = config.botName || "Echo AI";
 
   const imgBuffer = await makeCoolCard(botPrefix, botName);
