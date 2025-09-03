@@ -13,8 +13,9 @@ let config = {};
 try {
   config = JSON.parse(fs.readFileSync(path.join(__dirname, "../config.json")));
 } catch (e) {
-  config.prefix = "< no set >";
+  config.prefix = "[ no set ]";
   config.botName = "Echo AI";
+  config.ownerName = "Ari"; 
 }
 
 module.exports.config = {
@@ -23,7 +24,7 @@ module.exports.config = {
   role: 0,
   description: "bot prefix",
   prefix: true,
-  credits: "ari",
+  credits: "ari POGI",
   cooldowns: 5,
   category: "info"
 };
@@ -31,7 +32,8 @@ module.exports.config = {
 const emojiMap = {
   bot: "https://twemoji.maxcdn.com/v/latest/72x72/1f916.png",
   pin: "https://twemoji.maxcdn.com/v/latest/72x72/1f4cc.png",
-  id: "https://twemoji.maxcdn.com/v/latest/72x72/1f194.png"
+  id: "https://twemoji.maxcdn.com/v/latest/72x72/1f194.png",
+  crown: "https://twemoji.maxcdn.com/v/latest/72x72/1f451.png"
 };
 
 async function drawEmoji(ctx, url, x, y, size = 36) {
@@ -59,8 +61,8 @@ function drawParticles(ctx, width, height, count = 40) {
   }
 }
 
-async function makeCoolCard(botPrefix, botName) {
-  const width = 750, height = 430;
+async function makeCoolCard(botPrefix, botName, ownerName) {
+  const width = 750, height = 460;
   const canvas = createCanvas(width, height);
   const ctx = canvas.getContext("2d");
 
@@ -77,7 +79,7 @@ async function makeCoolCard(botPrefix, botName) {
   ctx.shadowColor = "rgba(0,0,0,0.6)";
   ctx.shadowBlur = 20;
   ctx.beginPath();
-  ctx.roundRect(40, 110, width - 80, 270, 25);
+  ctx.roundRect(40, 110, width - 80, 310, 25);
   ctx.fill();
   ctx.shadowBlur = 0;
 
@@ -113,6 +115,11 @@ async function makeCoolCard(botPrefix, botName) {
   ctx.font = "bold 30px OpenSans";
   ctx.fillText(`Name: ${botName}`, 180, 305);
 
+  await drawEmoji(ctx, emojiMap.crown, 120, 335, 38);
+  ctx.fillStyle = "#fbbf24";
+  ctx.font = "bold 30px OpenSans";
+  ctx.fillText(`Owner: ${ownerName}`, 180, 365);
+
   const gradient = ctx.createLinearGradient(200, 0, 550, 0);
   gradient.addColorStop(0, "#f472b6");
   gradient.addColorStop(0.25, "#facc15");
@@ -121,19 +128,20 @@ async function makeCoolCard(botPrefix, botName) {
   gradient.addColorStop(1, "#c084fc");
 
   ctx.fillStyle = gradient;
-  ctx.font = "italic 20px OpenSans-Regular";
+  ctx.font = "italic 21px OpenSans-Regular";
   ctx.textAlign = "center";
-  ctx.fillText("Enjoy chatting with me!", width / 2, 370);
+  ctx.fillText("Enjoy chatting with me!", width / 2, 410);
 
   return canvas.toBuffer();
 }
 
 module.exports.run = async function ({ api, event }) {
   const { threadID, messageID } = event;
-  const botPrefix = config.prefix || "< no set >";
+  const botPrefix = config.prefix || "[ no set ]";
   const botName = config.botName || "Echo AI";
+  const ownerName = config.ownerName || "Ari";
 
-  const imgBuffer = await makeCoolCard(botPrefix, botName);
+  const imgBuffer = await makeCoolCard(botPrefix, botName, ownerName);
   const filePath = path.join(__dirname, `prefix_${Date.now()}.png`);
   fs.writeFileSync(filePath, imgBuffer);
 
