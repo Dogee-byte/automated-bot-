@@ -1,8 +1,10 @@
 const fs = require("fs");
 const path = require("path");
 const { createCanvas, loadImage, registerFont } = require("canvas");
+
 try {
   registerFont(path.join(__dirname, "../fonts/OpenSans-Bold.ttf"), { family: "OpenSans" });
+  registerFont(path.join(__dirname, "../fonts/OpenSans-Regular.ttf"), { family: "OpenSans-Regular" });
 } catch (e) {
   console.log("⚠️ Font not found, using system default.");
 }
@@ -17,11 +19,9 @@ try {
 
 module.exports.config = {
   name: "prefix",
-  version: "5.0.0",
+  version: "1.0.0",
   role: 0,
-  description: "bot prefix.",
-  prefix: true,
-  premium: false,
+  description: "bot prefix",
   credits: "ari",
   cooldowns: 5,
   category: "info"
@@ -35,93 +35,83 @@ const emojiMap = {
   rocket: "https://twemoji.maxcdn.com/v/latest/72x72/1f680.png"
 };
 
-async function drawEmoji(ctx, emojiUrl, x, y, size = 40) {
+async function drawEmoji(ctx, url, x, y, size = 36) {
   try {
-    const img = await loadImage(emojiUrl);
+    const img = await loadImage(url);
     ctx.drawImage(img, x, y, size, size);
-  } catch (e) {
-    console.log("⚠️ Failed to load emoji:", emojiUrl);
+  } catch (err) {
+    console.log("⚠️ Emoji failed:", url);
   }
 }
 
-async function makePrefixCard(botPrefix, botName) {
-  const width = 700;
-  const height = 400;
+async function makeCoolCard(botPrefix, botName) {
+  const width = 750, height = 430;
   const canvas = createCanvas(width, height);
   const ctx = canvas.getContext("2d");
 
-  const gradient = ctx.createLinearGradient(0, 0, width, height);
-  gradient.addColorStop(0, "#1e3a8a");
-  gradient.addColorStop(1, "#0f172a");
-  ctx.fillStyle = gradient;
+  const bgGradient = ctx.createLinearGradient(0, 0, width, height);
+  bgGradient.addColorStop(0, "#0f2027");
+  bgGradient.addColorStop(0.5, "#203a43");
+  bgGradient.addColorStop(1, "#2c5364");
+  ctx.fillStyle = bgGradient;
   ctx.fillRect(0, 0, width, height);
 
-  ctx.fillStyle = "rgba(0,0,0,0.35)";
+  ctx.fillStyle = "rgba(255,255,255,0.12)";
+  ctx.shadowColor = "rgba(0,0,0,0.6)";
+  ctx.shadowBlur = 20;
   ctx.beginPath();
-  ctx.roundRect(40, 120, width - 80, 220, 25);
+  ctx.roundRect(40, 100, width - 80, 280, 25);
   ctx.fill();
+  ctx.shadowBlur = 0;
 
   try {
-    const logo = await loadImage("https://i.imgur.com/BzZ7g0C.png");
+    const avatar = await loadImage("https://i.imgur.com/lGxhMfB.jpeg");
+    const centerX = width / 2;
     ctx.save();
     ctx.beginPath();
-    ctx.arc(width / 2, 90, 45, 0, Math.PI * 2, true);
+    ctx.arc(centerX, 90, 55, 0, Math.PI * 2);
     ctx.closePath();
+    ctx.strokeStyle = "#38bdf8";
+    ctx.lineWidth = 6;
+    ctx.shadowColor = "#0ea5e9";
+    ctx.shadowBlur = 15;
+    ctx.stroke();
     ctx.clip();
-    ctx.drawImage(logo, width / 2 - 45, 45, 90, 90);
+    ctx.drawImage(avatar, centerX - 55, 35, 110, 110);
     ctx.restore();
-  } catch (err) {
-    console.log("⚠️ Logo failed to load.");
-  }
+  } catch {}
 
-  // Title with emoji
-  await drawEmoji(ctx, emojiMap.bot, width / 2 - 180, 135, 36);
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 36px OpenSans";
-  ctx.textAlign = "center";
-  ctx.fillText("Bot Information", width / 2 + 30, 165);
+  await drawEmoji(ctx, emojiMap.bot, 120, 140, 42);
+  ctx.fillStyle = "#f8fafc";
+  ctx.font = "bold 40px OpenSans";
+  ctx.fillText("Bot Information", 180, 175);
 
-  // Prefix with emoji
-  await drawEmoji(ctx, emojiMap.pin, width / 2 - 150, 200, 34);
+  await drawEmoji(ctx, emojiMap.pin, 120, 210, 38);
   ctx.fillStyle = "#facc15";
-  ctx.font = "bold 32px OpenSans";
-  ctx.fillText(`Prefix: ${botPrefix}`, width / 2 + 30, 225);
+  ctx.font = "bold 34px OpenSans";
+  ctx.fillText(`Prefix: ${botPrefix}`, 180, 240);
 
-  // Name with emoji
-  await drawEmoji(ctx, emojiMap.id, width / 2 - 150, 255, 32);
+  await drawEmoji(ctx, emojiMap.id, 120, 270, 38);
+  ctx.fillStyle = "#93c5fd";
+  ctx.font = "bold 34px OpenSans";
+  ctx.fillText(`Name: ${botName}`, 180, 300);
+  
+  await drawEmoji(ctx, emojiMap.sparkle, width/2 - 130, 330, 32);
   ctx.fillStyle = "#e2e8f0";
-  ctx.font = "bold 30px OpenSans";
-  ctx.fillText(`Name: ${botName}`, width / 2 + 30, 280);
-
-  // Footer with emojis
-  await drawEmoji(ctx, emojiMap.sparkle, width / 2 - 170, 305, 28);
-  await drawEmoji(ctx, emojiMap.rocket, width / 2 + 120, 305, 28);
-  ctx.fillStyle = "#cbd5e1";
-  ctx.font = "italic 22px OpenSans";
-  ctx.fillText("Enjoy chatting with me!", width / 2, 330);
+  ctx.font = "italic 26px OpenSans-Regular";
+  ctx.textAlign = "center";
+  ctx.fillText("Enjoy chatting with me!", width / 2, 355);
+  await drawEmoji(ctx, emojiMap.rocket, width/2 + 95, 330, 32);
 
   return canvas.toBuffer();
 }
-
-// Add roundRect helper
-CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
-  if (w < 2 * r) r = w / 2;
-  if (h < 2 * r) r = h / 2;
-  this.moveTo(x + r, y);
-  this.arcTo(x + w, y, x + w, y + h, r);
-  this.arcTo(x + w, y + h, x, y + h, r);
-  this.arcTo(x, y + h, x, y, r);
-  this.arcTo(x, y, x + w, y, r);
-  this.closePath();
-  return this;
-};
 
 module.exports.run = async function ({ api, event }) {
   const { threadID, messageID } = event;
   const botPrefix = config.prefix || " ";
   const botName = config.botName || "Echo AI";
 
-  const imgBuffer = await makePrefixCard(botPrefix, botName);
+  const imgBuffer = await makeCoolCard(botPrefix, botName);
   const filePath = path.join(__dirname, `prefix_${Date.now()}.png`);
   fs.writeFileSync(filePath, imgBuffer);
 
