@@ -30,9 +30,7 @@ module.exports.config = {
 const emojiMap = {
   bot: "https://twemoji.maxcdn.com/v/latest/72x72/1f916.png",
   pin: "https://twemoji.maxcdn.com/v/latest/72x72/1f4cc.png",
-  id: "https://twemoji.maxcdn.com/v/latest/72x72/1f194.png",
-  sparkle: "https://twemoji.maxcdn.com/v/latest/72x72/2728.png",
-  rocket: "https://twemoji.maxcdn.com/v/latest/72x72/1f680.png"
+  id: "https://twemoji.maxcdn.com/v/latest/72x72/1f194.png"
 };
 
 async function drawEmoji(ctx, url, x, y, size = 36) {
@@ -83,25 +81,23 @@ async function makeCoolCard(botPrefix, botName) {
 
   await drawEmoji(ctx, emojiMap.bot, 120, 140, 42);
   ctx.fillStyle = "#f8fafc";
-  ctx.font = "bold 40px OpenSans";
+  ctx.font = "bold 34px OpenSans";
   ctx.fillText("Bot Information", 180, 175);
 
   await drawEmoji(ctx, emojiMap.pin, 120, 210, 38);
   ctx.fillStyle = "#facc15";
-  ctx.font = "bold 34px OpenSans";
+  ctx.font = "bold 30px OpenSans";
   ctx.fillText(`Prefix: ${botPrefix}`, 180, 240);
 
   await drawEmoji(ctx, emojiMap.id, 120, 270, 38);
   ctx.fillStyle = "#93c5fd";
-  ctx.font = "bold 34px OpenSans";
+  ctx.font = "bold 30px OpenSans";
   ctx.fillText(`Name: ${botName}`, 180, 300);
   
-  await drawEmoji(ctx, emojiMap.sparkle, width/2 - 130, 330, 32);
   ctx.fillStyle = "#e2e8f0";
-  ctx.font = "italic 26px OpenSans-Regular";
+  ctx.font = "italic 23px OpenSans-Regular";
   ctx.textAlign = "center";
   ctx.fillText("Enjoy chatting with me!", width / 2, 355);
-  await drawEmoji(ctx, emojiMap.rocket, width/2 + 95, 330, 32);
 
   return canvas.toBuffer();
 }
