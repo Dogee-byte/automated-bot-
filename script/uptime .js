@@ -65,7 +65,7 @@ module.exports.run = async ({ api, event }) => {
     ctx.fill();
     ctx.stroke();
     
-    ctx.textAlign = "center"
+    ctx.textAlign = "center";
     ctx.font = "bold 65px Inter";
     ctx.fillStyle = "#f8fafc";
     ctx.shadowColor = "#38bdf8";
