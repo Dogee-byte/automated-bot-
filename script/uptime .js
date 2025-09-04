@@ -3,24 +3,26 @@ const path = require("path");
 const os = require("os");
 const { createCanvas, registerFont } = require("canvas");
 const pidusage = require("pidusage");
-const tae = require("fs-extra");
 
+// Config
 module.exports.config = {
   name: "uptime",
-  version: "1.0.3",
+  version: "1.0.4",
   role: 0,
-  credits: "ari",
-  description: "Get bot uptime and system information",
+  credits: "ARI",
+  description: "Get bot uptime and system information with cool canvas",
   hasPrefix: false,
   cooldown: 5,
   aliases: []
 };
 
+// Load custom font
 try {
   registerFont(path.join(__dirname, "../fonts/Inter-Bold.ttf"), { family: "Inter", weight: "700" });
   registerFont(path.join(__dirname, "../fonts/Inter-Regular.ttf"), { family: "Inter", weight: "400" });
 } catch (_) {}
 
+// Convert bytes
 function byte2mb(bytes) {
   const units = ["Bytes", "KB", "MB", "GB", "TB"];
   let l = 0, n = parseInt(bytes, 10) || 0;
@@ -28,6 +30,7 @@ function byte2mb(bytes) {
   return `${n.toFixed(n < 10 && l > 0 ? 1 : 0)} ${units[l]}`;
 }
 
+// Uptime formatting
 function formatUptime(seconds) {
   const d = Math.floor(seconds / 86400);
   const h = Math.floor((seconds % 86400) / 3600);
@@ -35,17 +38,6 @@ function formatUptime(seconds) {
   const s = seconds % 60;
   return `${d}d ${h}h ${m}m ${s}s`;
 }
-
-const database = JSON.parse(tae.readFileSync("./data/database.json", "utf8"));
-let threadCount = 0;
-let userCount = new Set();
-database.forEach(entry => {
-  const threadID = Object.keys(entry)[0];
-  const users = entry[threadID];
-  if (users.length > 0) threadCount++;
-  users.forEach(user => userCount.add(user.id));
-});
-userCount = userCount.size;
 
 module.exports.run = async ({ api, event }) => {
   try {
@@ -58,16 +50,19 @@ module.exports.run = async ({ api, event }) => {
       release: os.release(),
     };
 
+    // Canvas setup
     const width = 1200, height = 600;
     const canvas = createCanvas(width, height);
     const ctx = canvas.getContext("2d");
 
+    // Background gradient
     const bg = ctx.createLinearGradient(0, 0, width, height);
     bg.addColorStop(0, "#1e3c72");
     bg.addColorStop(1, "#2a5298");
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, width, height);
 
+    // Card container
     ctx.fillStyle = "rgba(255,255,255,0.1)";
     ctx.strokeStyle = "rgba(255,255,255,0.3)";
     ctx.lineWidth = 3;
@@ -75,10 +70,12 @@ module.exports.run = async ({ api, event }) => {
     ctx.fill();
     ctx.stroke();
 
+    // Title
     ctx.font = "bold 54px Inter";
     ctx.fillStyle = "#f1f5f9";
     ctx.fillText("Bot Uptime Status", 100, 120);
 
+    // Uptime
     ctx.font = "28px Inter";
     ctx.fillStyle = "#cbd5e1";
     ctx.fillText("Uptime:", 100, 180);
@@ -86,6 +83,7 @@ module.exports.run = async ({ api, event }) => {
     ctx.fillStyle = "#38bdf8";
     ctx.fillText(formatUptime(uptimeSeconds), 250, 185);
 
+    // CPU & RAM
     ctx.font = "28px Inter";
     ctx.fillStyle = "#cbd5e1";
     ctx.fillText("CPU Usage:", 100, 260);
@@ -97,21 +95,22 @@ module.exports.run = async ({ api, event }) => {
     ctx.fillStyle = "#facc15";
     ctx.fillText(byte2mb(usage.memory), 320, 310);
 
+    // Other stats
     ctx.font = "28px Inter";
     ctx.fillStyle = "#cbd5e1";
-    ctx.fillText(`Threads: ${threadCount}`, 100, 380);
-    ctx.fillText(`Users: ${userCount}`, 100, 420);
-    ctx.fillText(`Cores: ${os.cpus().length}`, 100, 460);
-    ctx.fillText(`Ping: ${Date.now() - event.timestamp}ms`, 100, 500);
+    ctx.fillText(`Cores: ${os.cpus().length}`, 100, 380);
+    ctx.fillText(`Ping: ${Date.now() - event.timestamp}ms`, 100, 420);
 
     ctx.fillText(`OS: ${osInfo.platform} (${osInfo.architecture})`, 550, 380);
     ctx.fillText(`Host: ${osInfo.hostname}`, 550, 420);
     ctx.fillText(`Release: ${osInfo.release}`, 550, 460);
 
+    // Footer
     ctx.font = "20px Inter";
     ctx.fillStyle = "#94a3b8";
-    ctx.fillText("Autobot by ARI", width - 300, height - 30);
+    ctx.fillText("Autobot Canvas by ARI", width - 300, height - 30);
 
+    // Save image
     const outDir = path.join(__dirname, "cache");
     if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
     const outPath = path.join(outDir, `uptime_${Date.now()}.png`);
