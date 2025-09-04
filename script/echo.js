@@ -2,13 +2,13 @@ const axios = require("axios");
 
 module.exports.config = {
   name: "echo",
-  version: "1.1.0",
+  version: "1.2.0",
   role: 0,
   hasPrefix: false,
   aliases: ["echoai"],
   description: "Talk with Echo AI",
   usage: "echo <your message>",
-  credits: "Ari (api by ari)",
+  credits: "Ari (api by Ari)",
   cooldown: 3,
 };
 
@@ -22,7 +22,7 @@ module.exports.run = async function({ api, event, args }) {
     return api.sendMessage("❌ Please provide a question. Example: echo Hello!", threadID, messageID);
   }
 
-  api.sendMessage("⏳ Processing your request with Echo AI...", threadID, async (err, info) => {
+  api.sendMessage("✨ Echo AI is typing...", threadID, async (err, info) => {
     if (err) return;
 
     try {
@@ -36,15 +36,14 @@ module.exports.run = async function({ api, event, args }) {
         const userName = infoUser?.[senderID]?.name || "Unknown User";
         const timePH = new Date().toLocaleString("en-US", { timeZone: "Asia/Manila" });
 
-        const replyMessage = `
-╭───────────⭓
-│ 🤖 𝗘𝗖𝗛𝗢 𝗔𝗜 𝗥𝗘𝗦𝗣𝗢𝗡𝗦𝗘
-│ 
-│ ${responseText}
-│ 
-│ 👤 Asked by: ${userName}
-│ ⏰ Time: ${timePH}
-╰─────────────────⭓`;
+        const replyMessage = 
+`╔════════════════╗
+  🤖 Echo AI
+╚════════════════╝
+
+${responseText}
+
+👤 ${userName} | ⏰ ${timePH}`;
 
         api.editMessage(replyMessage, info.messageID);
       });
