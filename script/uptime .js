@@ -65,7 +65,7 @@ module.exports.run = async function ({ api, event }) {
     const botName = (global?.config?.BOTNAME) || "ECHO AI";
 
     const avatarUrl = "https://i.imgur.com/I3Milxg.png";
-    
+    let avatarBuffer = null;
     try {
       const { data } = await axios.get(avatarUrl, { responseType: "arraybuffer" });
       avatarBuffer = Buffer.from(data);
