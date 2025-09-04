@@ -1,55 +1,39 @@
-const axios = require('axios');
+const axios = require("axios");
+const fs = require("fs");
+const path = require("path");
 
 module.exports.config = {
-  name: "billboard",
-  version: "1.0.0",
-  role: 0,
-  credits: "vern",
-  description: "Generate a billboard image with your custom text using the Ace API.",
-  usage: "/billboard <your message>",
-  prefix: true,
-  cooldowns: 3,
-  commandCategory: "Canvas"
+    name: "billboard",
+    version: "1.0.0",
+    credits: "Ari",
+    description: "Generate a billboard image with your text",
+    usages: "billboard [text]",
+    commandCategory: "fun",
+    cooldowns: 5
 };
 
-module.exports.run = async function ({ api, event, args }) {
-  const { threadID, messageID } = event;
-  const text = args.join(' ').trim();
-  const prefix = "/"; // Update if dynamic prefix is used
+module.exports.run = async function({ api, event, args }) {
+    try {
+        if (args.length === 0) {
+            return api.sendMessage("❌ Please provide some text.\n\nUsage: billboard [your text]", event.threadID, event.messageID);
+        }
 
-  if (!text) {
-    const usageMessage = `════『 𝗕𝗜𝗟𝗟𝗕𝗢𝗔𝗥𝗗 』════\n\n` +
-      `⚠️ Please provide the message for your billboard.\n\n` +
-      `📌 Usage: ${prefix}billboard <your message>\n` +
-      `💬 Example: ${prefix}billboard Hello, World!\n\n` +
-      `> Thank you for using Billboard Generator!`;
+        const text = args.join(" ");
+        const apiUrl = `https://betadash-api-swordslush-production.up.railway.app/billboard?text=${encodeURIComponent(text)}`;
 
-    return api.sendMessage(usageMessage, threadID, messageID);
-  }
+        const outputPath = path.join(__dirname, "cache", `billboard_${Date.now()}.png`);
+        const response = await axios.get(apiUrl, { responseType: "arraybuffer" });
+        fs.writeFileSync(outputPath, Buffer.from(response.data, "binary"));
 
-  try {
-    const waitMsg = `════『 𝗕𝗜𝗟𝗟𝗕𝗢𝗔𝗥𝗗 』════\n\n` +
-      `🖼️ Generating billboard for: "${text}"\nPlease wait a moment...`;
-    await api.sendMessage(waitMsg, threadID, messageID);
+        return api.sendMessage(
+            { body: `🛑 Billboard generated with text: "${text}"`, attachment: fs.createReadStream(outputPath) },
+            event.threadID,
+            () => fs.unlinkSync(outputPath),
+            event.messageID
+        );
 
-    // Correct URL (fixed duplicated ?text=)
-    const apiUrl = `https://ace-rest-api.onrender.com/api/billboard?text=${encodeURIComponent(text)}`;
-
-    const response = await axios.get(apiUrl, { responseType: 'stream' });
-
-    return api.sendMessage({
-      body: `════『 𝗕𝗜𝗟𝗟𝗕𝗢𝗔𝗥𝗗 』════\n\nHere's your generated billboard!`,
-      attachment: response.data
-    }, threadID, messageID);
-
-  } catch (error) {
-    console.error('❌ Billboard error:', error);
-
-    const errorMessage = `════『 𝗘𝗥𝗥𝗢𝗥 』════\n\n` +
-      `🚫 Failed to generate billboard.\n` +
-      `🔧 Reason: ${error.response?.data?.message || error.message || 'Unknown error'}\n\n` +
-      `Please try again later.`;
-
-    return api.sendMessage(errorMessage, threadID, messageID);
-  }
+    } catch (err) {
+        console.error("Billboard Error:", err?.response?.data || err.message);
+        return api.sendMessage("❌ Failed to generate billboard. Please try again later.", event.threadID, event.messageID);
+    }
 };
