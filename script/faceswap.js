@@ -1,57 +1,55 @@
-const axios = require('axios');
-const fs = require('fs');
-const path = require('path');
+const axios = require("axios");
+const fs = require("fs");
+const path = require("path");
 
 module.exports.config = {
-  name: "faceswap",
-  hasPrefix: false,
-  role: 0,
-  hasPermission: false,
-  commandCategory: "no prefix",
-  usePrefix: false,
-  cooldown: 5,
-  aliases: ["swap"],
-  description: "Face swap two images",
-  usages: "reply to two images",
-  credits: "Deku | Modified by Ari"
+    name: "faceswap",
+    version: "1.2.0",
+    credits: "Ari",
+    description: "Swap faces between two images",
+    usages: "faceswap (reply with 2 images)",
+    commandCategory: "fun",
+    cooldowns: 5
 };
 
-module.exports.run = async function ({ api, event }) {
-  try {
-    if (event.type !== "message_reply") 
-      return api.sendMessage("❗ Please reply to two images.", event.threadID);
+module.exports.run = async function({ api, event }) {
+    try {
+        if (!event.messageReply || !event.messageReply.attachments) {
+            return api.sendMessage("❌ Please reply to a message with 2 images (source + target).", event.threadID, event.messageID);
+        }
 
-    const attachments = event.messageReply.attachments;
-    if (!attachments || attachments.length !== 2)
-      return api.sendMessage("❗ You must reply to exactly 2 images.", event.threadID);
+        const images = event.messageReply.attachments.filter(a => a.type === "photo");
 
-    const [baseImage, swapImage] = attachments;
+        if (images.length < 2) {
+            return api.sendMessage("❌ You must reply with 2 images (first = source face, second = target image).", event.threadID, event.messageID);
+        }
 
-    if (baseImage.type !== "photo" || swapImage.type !== "photo")
-      return api.sendMessage("❗ Both attachments must be images.", event.threadID);
+        const [source, target] = images;
+        const apikey = "8721466d-c231-4641-a691-50ede6fdce52";
 
-    const baseUrl = encodeURIComponent(baseImage.url);
-    const swapUrl = encodeURIComponent(swapImage.url);
+        const apiUrl = `https://kaiz-apis.gleeze.com/api/faceswap-v2?sourceUrl=${encodeURIComponent(source.url)}&targetUrl=${encodeURIComponent(target.url)}&apikey=${apikey}`;
 
-    const apiUrl = `https://kaiz-apis.gleeze.com/api/faceswap?baseUrl=${baseUrl}&swapUrl=${swapUrl}&apikey=`; //Get apikey in Kaiz-apis!
+        console.log("Faceswap API Call:", apiUrl); 
 
-    const res = await axios.get(apiUrl, { responseType: 'arraybuffer' });
+        const response = await axios.get(apiUrl, { responseType: "arraybuffer" });
 
-    const cacheDir = path.join(__dirname, '..', 'cache');
-    if (!fs.existsSync(cacheDir)) {
-      fs.mkdirSync(cacheDir, { recursive: true });
+        const outputPath = path.join(__dirname, "cache", `faceswap_${Date.now()}.png`);
+        fs.writeFileSync(outputPath, Buffer.from(response.data, "binary"));
+
+        return api.sendMessage(
+            { body: "✅ Face swapped successfully!", attachment: fs.createReadStream(outputPath) },
+            event.threadID,
+            () => fs.unlinkSync(outputPath),
+            event.messageID
+        );
+
+    } catch (err) {
+        console.error("Faceswap Error:", err?.response?.data || err.message);
+
+        if (err?.response?.status === 400) {
+            return api.sendMessage("❌ Error 400: Bad Request.\nMake sure you replied with **2 clear images** (not stickers/videos).", event.threadID, event.messageID);
+        }
+
+        return api.sendMessage("❌ Failed to swap faces. Please try again later.", event.threadID, event.messageID);
     }
-
-    const filePath = path.join(cacheDir, `faceswap_${Date.now()}.png`);
-    fs.writeFileSync(filePath, Buffer.from(res.data, 'binary'));
-
-    return api.sendMessage({
-      body: "✅ Face swap complete!",
-      attachment: fs.createReadStream(filePath)
-    }, event.threadID);
-
-  } catch (error) {
-    console.error(error);
-    return api.sendMessage("❌ Error: " + error.message, event.threadID);
-  }
 };
