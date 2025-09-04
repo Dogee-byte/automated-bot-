@@ -65,12 +65,11 @@ module.exports.run = async ({ api, event }) => {
     ctx.fill();
     ctx.stroke();
     
-    ctx.textAlign = "center";
     ctx.font = "bold 65px Inter";
     ctx.fillStyle = "#f8fafc";
     ctx.shadowColor = "#38bdf8";
     ctx.shadowBlur = 20;
-    ctx.fillText("BOT UPTIME MONITOR", 90, 140);
+    ctx.fillText("BOT UPTIME MONITOR", 100, 140);
     ctx.shadowBlur = 0;
 
     ctx.textAlign = "center";
