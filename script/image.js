@@ -6,16 +6,19 @@ module.exports.config = {
     name: "image",
     aliases: [],
     version: "1.1",
-    author: "real owner (convert to autobot by ari)",
+    author: "real owner (converted by ari)",
     countDown: 0,
     role: 0,
-    description: "Edit or generate an image using Gemini-Edit",
+    shortDescription: "Edit or generate an image using Gemini-Edit",
     category: "𝗔𝗜",
+    guide: {
+        en: "{pn} <text> (reply to image optional)",
+    },
 };
 
-module.exports.run = async function ({ message, event, args, api }) {
+module.exports.run = async function ({ api, event, args }) {
     const prompt = args.join(" ");
-    if (!prompt) return message.reply("Please provide the text to edit or generate.");
+    if (!prompt) return api.sendMessage("Please provide the text to edit or generate.", event.threadID, event.messageID);
 
     const apiurl = "https://gemini-edit-omega.vercel.app/edit";
     api.setMessageReaction("⏳", event.messageID, () => {}, true);
@@ -31,7 +34,7 @@ module.exports.run = async function ({ message, event, args, api }) {
 
         if (!res.data || !res.data.images || !res.data.images[0]) {
             api.setMessageReaction("❌", event.messageID, () => {}, true);
-            return message.reply("❌ Failed to get image.");
+            return api.sendMessage("❌ Failed to get image.", event.threadID, event.messageID);
         }
 
         const base64Image = res.data.images[0].replace(/^data:image\/\w+;base64,/, "");
@@ -45,18 +48,16 @@ module.exports.run = async function ({ message, event, args, api }) {
 
         api.setMessageReaction("✅", event.messageID, () => {}, true);
 
-        await message.reply(
+        api.sendMessage(
             { attachment: fs.createReadStream(imagePath) },
             event.threadID,
-            () => {
-                fs.unlinkSync(imagePath);
-            },
+            () => fs.unlinkSync(imagePath),
             event.messageID
         );
 
     } catch (error) {
         console.error("❌ API ERROR:", error.response?.data || error.message);
         api.setMessageReaction("❌", event.messageID, () => {}, true);
-        return message.reply("Error generating/editing image.");
+        return api.sendMessage("Error generating/editing image.", event.threadID, event.messageID);
     }
 };
