@@ -13,7 +13,7 @@ module.exports.config = {
   category: "AI"
 };
 
-module.exports.run = async function ({ message, args, event }) {
+module.exports.run = async function ({ api, args, event }) {
   const userId = event.senderID;
 
   if (!args[0]) return message.reply("❌ Please type something for Echo AI.");
