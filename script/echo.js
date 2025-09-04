@@ -1,59 +1,58 @@
 const axios = require("axios");
 
-let userMemory = {};
-
 module.exports.config = {
   name: "echo",
-  version: "3.1",
-  author: "ari (api by ari)",
-  countDown: 5,
+  version: "1.1.0",
   role: 0,
-  shortDescription: "Talk with Echo AI",
-  longDescription: "Chat with Echo AI",
-  category: "AI"
+  hasPrefix: false,
+  aliases: ["echoai"],
+  description: "Talk with Echo AI",
+  usage: "echo <your message>",
+  credits: "Ari (api by ari)",
+  cooldown: 3,
 };
 
-module.exports.run = async function ({ api, args, event }) {
-  const userId = event.senderID;
+module.exports.run = async function({ api, event, args }) {
+  const promptText = args.join(" ").trim();
+  const senderID = event.senderID;
+  const threadID = event.threadID;
+  const messageID = event.messageID;
 
-  if (!args[0]) return message.reply("❌ Please type something for Echo AI.");
-
-  if (args[0].toLowerCase() === "reset") {
-    userMemory[userId] = [];
-    return message.reply("🧹 Memory reset! Let's start fresh.");
+  if (!promptText) {
+    return api.sendMessage("❌ Please provide a question. Example: echo Hello!", threadID, messageID);
   }
 
-  if (!userMemory[userId]) userMemory[userId] = [];
-
-  try {
-    const userInput = args.join(" ");
-
-    userMemory[userId].push({ role: "user", content: userInput });
-
-    let reply;
+  api.sendMessage("⏳ Processing your request with Echo AI...", threadID, async (err, info) => {
+    if (err) return;
 
     try {
-      const res = await axios.post("https://echoai-api.onrender.com/api/ask", {
-        question: userInput,
-        history: userMemory[userId]
+      const { data } = await axios.post("https://echoai-api.onrender.com/api/ask", {
+        question: promptText
       });
-      reply = res.data.answer;
-    } catch (e) {
-      const res = await axios.post("https://echoai-api.onrender.com", {
-        question: userInput,
-        history: userMemory[userId]
+
+      const responseText = data.answer || "⚠️ No response received from Echo AI.";
+
+      api.getUserInfo(senderID, (err, infoUser) => {
+        const userName = infoUser?.[senderID]?.name || "Unknown User";
+        const timePH = new Date().toLocaleString("en-US", { timeZone: "Asia/Manila" });
+
+        const replyMessage = `
+╭───────────⭓
+│ 🤖 𝗘𝗖𝗛𝗢 𝗔𝗜 𝗥𝗘𝗦𝗣𝗢𝗡𝗦𝗘
+│ 
+│ ${responseText}
+│ 
+│ 👤 Asked by: ${userName}
+│ ⏰ Time: ${timePH}
+╰─────────────────⭓`;
+
+        api.editMessage(replyMessage, info.messageID);
       });
-      reply = res.data.answer;
+
+    } catch (error) {
+      console.error("Echo AI Error:", error);
+      const errMsg = "❌ Error: " + (error.response?.data?.message || error.message || "Unknown error occurred.");
+      api.editMessage(errMsg, info.messageID);
     }
-
-    if (!reply) reply = "⚠️ Echo AI didn’t reply.";
-
-    userMemory[userId].push({ role: "assistant", content: reply });
-
-    message.reply(reply);
-
-  } catch (err) {
-    console.error("❌ API Error:", err.response?.data || err.message);
-    message.reply("❌ Error: Cannot connect to Echo AI API.");
-  }
+  });
 };
