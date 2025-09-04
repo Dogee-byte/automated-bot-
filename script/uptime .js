@@ -75,8 +75,7 @@ module.exports.run = async function ({ api, event }) {
     const stats = getSystemStats();
     const botName = (global?.config?.BOTNAME) || "ECHO AI";
 
-    let avatarUrl = ""; 
-    let avatarImg = null;
+    let avatarUrl = "https://i.imgur.com/I3Milxg.png"; 
 
     try {
       if (avatarUrl) {
