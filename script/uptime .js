@@ -1,17 +1,16 @@
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
-const axios = require("axios");
 const { createCanvas, loadImage, registerFont } = require("canvas");
 const moment = require("moment-timezone");
-
+const axios = require("axios");
 
 module.exports.config = {
   name: "uptime",
-  version: "1.0.0",
+  version: "1.2.0",
   hasPermssion: 0,
   credits: "ARI",
-  description: "Show real uptime of bot",
+  description: "Show real uptime of bot with canvas",
   commandCategory: "System",
   usages: "uptime",
   cooldowns: 3,
@@ -28,9 +27,9 @@ function formatUptime(seconds) {
   const minutes = Math.floor((seconds % 3600) / 60);
   const secs = Math.floor(seconds % 60);
   const parts = [];
-  if (days) parts.push(`${days}d`);
-  if (hours || days) parts.push(`${hours}h`);
-  if (minutes || hours || days) parts.push(`${minutes}m`);
+  if (days > 0) parts.push(`${days}d`);
+  if (hours > 0) parts.push(`${hours}h`);
+  if (minutes > 0) parts.push(`${minutes}m`);
   parts.push(`${secs}s`);
   return parts.join(" ");
 }
@@ -44,6 +43,19 @@ function getSystemStats() {
     ram: { used: usedMem, total: totalMem },
     cpu: cpuLoad
   };
+}
+
+function drawRoundRect(ctx, x, y, w, h, r) {
+  if (w < 2 * r) r = w / 2;
+  if (h < 2 * r) r = h / 2;
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+  return ctx;
 }
 
 module.exports.run = async function ({ api, event }) {
@@ -63,12 +75,23 @@ module.exports.run = async function ({ api, event }) {
     const stats = getSystemStats();
     const botName = (global?.config?.BOTNAME) || "ECHO AI";
 
-    const avatarUrl = "https://i.imgur.com/I3Milxg.png";
-    let avatarBuffer = null;
+    let avatarUrl = ""; 
+    let avatarImg = null;
+
     try {
-      const { data } = await axios.get(avatarUrl, { responseType: "arraybuffer" });
-      avatarBuffer = Buffer.from(data);
-    } catch {}
+      if (avatarUrl) {
+        avatarImg = await loadImage(avatarUrl);
+      } else {
+        const botID = api.getCurrentUserID();
+        const avatarRes = await axios.get(
+          `https://graph.facebook.com/${botID}/picture?height=512&width=512&redirect=false`
+        );
+        const realUrl = avatarRes.data?.data?.url;
+        if (realUrl) avatarImg = await loadImage(realUrl);
+      }
+    } catch (e) {
+      console.error("Failed to load avatar:", e.message);
+    }
 
     const width = 1200, height = 600;
     const canvas = createCanvas(width, height);
@@ -84,7 +107,7 @@ module.exports.run = async function ({ api, event }) {
     ctx.fillStyle = "rgba(255,255,255,0.07)";
     ctx.strokeStyle = "rgba(255,255,255,0.3)";
     ctx.lineWidth = 3;
-    ctx.roundRect(320, 50, 820, 500, 30);
+    drawRoundRect(ctx, 320, 50, 820, 500, 30);
     ctx.fill();
     ctx.stroke();
 
@@ -97,9 +120,8 @@ module.exports.run = async function ({ api, event }) {
     ctx.arc(avatarX + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2, 0, Math.PI * 2);
     ctx.closePath();
     ctx.clip();
-    if (avatarBuffer) {
-      const img = await loadImage(avatarBuffer);
-      ctx.drawImage(img, avatarX, avatarY, avatarSize, avatarSize);
+    if (avatarImg) {
+      ctx.drawImage(avatarImg, avatarX, avatarY, avatarSize, avatarSize);
     } else {
       ctx.fillStyle = "#1f2937";
       ctx.fillRect(avatarX, avatarY, avatarSize, avatarSize);
@@ -151,7 +173,7 @@ module.exports.run = async function ({ api, event }) {
     ctx.font = "bold 36px Inter";
     ctx.fillStyle = "#22c55e";
     ctx.fillText(`${stats.cpu.toFixed(2)} load`, 360, 470);
-    
+
     const cpuBarW = 400, cpuBarH = 25, cpuBarX = 360, cpuBarY = 490;
     ctx.fillStyle = "#1e293b";
     ctx.fillRect(cpuBarX, cpuBarY, cpuBarW, cpuBarH);
