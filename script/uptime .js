@@ -1,142 +1,231 @@
-const { createCanvas } = require("canvas");
 const os = require("os");
 const fs = require("fs").promises;
-const pidusage = require("pidusage");
 
 module.exports.config = {
   name: "uptime",
-  version: "1.1.0",
+  version: "2.0.0",
   role: 0,
-  credits: "Ari",
-  description: "Uptime ni bur4t",
+  credits: "Ari (bulletproof ver.)",
+  description: "Uptime card with CPU/RAM bars; falls back to text if canvas/pidusage missing",
   hasPrefix: false,
   cooldown: 5,
   aliases: []
 };
 
-module.exports.byte2mb = (bytes) => {
-  const units = ["Bytes", "KB", "MB", "GB"];
+// ---------- Helpers ----------
+const byte2mb = (bytes) => {
+  const units = ["Bytes", "KB", "MB", "GB", "TB"];
   let l = 0, n = parseInt(bytes, 10) || 0;
   while (n >= 1024 && ++l) n = n / 1024;
-  return `${n.toFixed(2)} ${units[l]}`;
+  return `${n.toFixed(l ? 2 : 0)} ${units[l]}`;
 };
 
-module.exports.getStartTimestamp = async () => {
+const getUptimeString = (uptimeSec) => {
+  const days = Math.floor(uptimeSec / 86400);
+  const hours = Math.floor((uptimeSec % 86400) / 3600);
+  const mins = Math.floor((uptimeSec % 3600) / 60);
+  const seconds = Math.floor(uptimeSec % 60);
+  return `${days}d ${hours}h ${mins}m ${seconds}s`;
+};
+
+const asciiBar = (percent, width = 24) => {
+  const p = Math.max(0, Math.min(100, Number(percent) || 0));
+  const filled = Math.round((p / 100) * width);
+  const empty = width - filled;
+  return `[${"█".repeat(filled)}${"░".repeat(empty)}]`;
+};
+
+const getStartTimestamp = async () => {
   try {
-    const startTimeStr = await fs.readFile("time.txt", "utf8");
-    return parseInt(startTimeStr);
+    const s = await fs.readFile("time.txt", "utf8");
+    const v = parseInt(s, 10);
+    return Number.isFinite(v) ? v : Date.now();
   } catch {
     return Date.now();
   }
 };
 
-module.exports.saveStartTimestamp = async (timestamp) => {
-  try {
-    await fs.writeFile("time.txt", timestamp.toString());
-  } catch (error) {
-    console.error("Error saving start timestamp:", error);
-  }
+const saveStartTimestamp = async (ts) => {
+  try { await fs.writeFile("time.txt", String(ts)); } catch (e) { console.error("saveStartTimestamp:", e); }
 };
 
-module.exports.getUptime = (uptime) => {
-  const days = Math.floor(uptime / (3600 * 24));
-  const hours = Math.floor((uptime % (3600 * 24)) / 3600);
-  const mins = Math.floor((uptime % 3600) / 60);
-  const seconds = Math.floor(uptime % 60);
-  return `${days}d ${hours}h ${mins}m ${seconds}s`;
-};
-
-function drawProgressBar(ctx, x, y, width, height, percent, color1, color2) {
-  ctx.fillStyle = "rgba(255,255,255,0.15)";
-  ctx.fillRect(x, y, width, height);
-
-  const gradient = ctx.createLinearGradient(x, y, x + width, y);
-  gradient.addColorStop(0, color1);
-  gradient.addColorStop(1, color2);
-
-  const fillWidth = Math.max(0, Math.min(width, (percent / 100) * width));
-  ctx.fillStyle = gradient;
-  ctx.fillRect(x, y, fillWidth, height);
-
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = "#ffffff";
-  ctx.strokeRect(x, y, width, height);
-}
-
+// ---------- Main ----------
 module.exports.run = async ({ api, event }) => {
   try {
-    const startTime = await module.exports.getStartTimestamp();
+    // Uptime
+    const startTime = await getStartTimestamp();
     const uptimeSeconds = Math.floor((Date.now() - startTime) / 1000);
-    const usage = await pidusage(process.pid);
+    const uptimeMessage = getUptimeString(uptimeSeconds);
 
-    const osInfo = {
-      platform: os.platform(),
-      arch: os.arch(),
-      release: os.release()
-    };
+    // Try to load pidusage; fallback if missing
+    let cpuPercent = null;
+    let procMemBytes = null;
 
-    const uptimeMessage = module.exports.getUptime(uptimeSeconds);
+    let pidusage;
+    try { pidusage = require("pidusage"); } catch { pidusage = null; }
 
-    const canvas = createCanvas(800, 500);
-    const ctx = canvas.getContext("2d");
+    if (pidusage) {
+      try {
+        const usage = await pidusage(process.pid);
+        cpuPercent = Number(usage.cpu) || 0;           // process CPU %
+        procMemBytes = Number(usage.memory) || 0;      // process RSS
+      } catch (e) {
+        console.warn("pidusage failed, using fallbacks:", e?.message || e);
+      }
+    }
+    if (cpuPercent === null) {
+      // Approximate from 1-min load (system-wide), normalized by core count
+      const cores = (os.cpus() || []).length || 1;
+      const load1 = (os.loadavg?.()[0]) || 0;
+      cpuPercent = Math.max(0, Math.min(100, (load1 / cores) * 100));
+    }
+    if (procMemBytes === null) {
+      procMemBytes = (process.memoryUsage?.().rss) || 0;
+    }
 
-    const bgGradient = ctx.createLinearGradient(0, 0, 800, 500);
-    bgGradient.addColorStop(0, "#0f2027");
-    bgGradient.addColorStop(0.5, "#203a43");
-    bgGradient.addColorStop(1, "#2c5364");
-    ctx.fillStyle = bgGradient;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const totalMem = os.totalmem();
+    const ramPercent = Math.max(0, Math.min(100, (procMemBytes / totalMem) * 100));
 
-    const titleGradient = ctx.createLinearGradient(0, 0, 800, 0);
-    titleGradient.addColorStop(0, "#00f5ff");
-    titleGradient.addColorStop(1, "#ff00ff");
-    ctx.fillStyle = titleGradient;
-    ctx.font = "bold 34px Arial";
-    ctx.shadowColor = "#000000";
-    ctx.shadowBlur = 8;
-    ctx.fillText("BOT UPTIME STATUS", 200, 70);
-    ctx.shadowBlur = 0;
+    // Build text body (always present so laging may reply)
+    const bodyLines = [
+      "🤖 BOT UPTIME STATUS",
+      `⏱ Uptime: ${uptimeMessage}`,
+      `⚙️ CPU: ${cpuPercent.toFixed(1)}% ${asciiBar(cpuPercent)}`,
+      `📦 RAM: ${byte2mb(procMemBytes)} / ${byte2mb(totalMem)} (${ramPercent.toFixed(1)}%) ${asciiBar(ramPercent)}`,
+      `🖥 Platform: ${os.platform()}  |  Arch: ${os.arch()}`,
+      `🧩 Cores: ${(os.cpus() || []).length}  |  OS: ${os.release()}`,
+      `📡 Ping: ${Math.max(0, Date.now() - (event?.timestamp || Date.now()))}ms`
+    ];
+    const textBody = bodyLines.join("\n");
 
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "20px Arial";
-    let y = 150;
-    ctx.fillText(`[ Uptime ] : ${uptimeMessage}`, 60, y); y += 40;
-    ctx.fillText(`[ Platform ] : ${osInfo.platform}`, 60, y); y += 40;
-    ctx.fillText(`[ Arch ] : ${osInfo.arch}`, 60, y); y += 40;
-    ctx.fillText(`[ Ping ] : ${Date.now() - event.timestamp}ms`, 60, y); y += 50;
+    // Try to load canvas; if not available, send text-only reply
+    let attachment = null;
+    try {
+      const { createCanvas } = require("canvas"); // lazy require
+      if (typeof createCanvas === "function") {
+        // ---- Draw canvas card ----
+        const W = 900, H = 520;
+        const canvas = createCanvas(W, H);
+        const ctx = canvas.getContext("2d");
 
-    const cpuPercent = usage.cpu.toFixed(1);
-    ctx.fillStyle = "#ffffff";
-    ctx.fillText(`[ CPU ] Usage: ${cpuPercent}%`, 60, y);
-    drawProgressBar(ctx, 280, y - 20, 450, 25, cpuPercent, "#00ffcc", "#0077ff");
-    y += 70;
+        // Background gradient
+        const bg = ctx.createLinearGradient(0, 0, W, H);
+        bg.addColorStop(0, "#0f2027");
+        bg.addColorStop(0.5, "#203a43");
+        bg.addColorStop(1, "#2c5364");
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, W, H);
 
-    const ramUsed = usage.memory;
-    const ramTotal = os.totalmem();
-    const ramPercent = ((ramUsed / ramTotal) * 100).toFixed(1);
-    ctx.fillStyle = "#ffffff";
-    ctx.fillText(
-      `[ RAM ] Usage: ${module.exports.byte2mb(ramUsed)} / ${module.exports.byte2mb(ramTotal)} (${ramPercent}%)`,
-      60,
-      y
-    );
-    drawProgressBar(ctx, 60, y + 10, 670, 25, ramPercent, "#ff007f", "#ffae00");
+        // Title (gradient fill)
+        const titleGrad = ctx.createLinearGradient(0, 0, W, 0);
+        titleGrad.addColorStop(0, "#00f5ff");
+        titleGrad.addColorStop(1, "#ff00ff");
+        ctx.fillStyle = titleGrad;
+        ctx.font = "bold 36px Arial";
+        ctx.shadowColor = "rgba(0,0,0,0.6)";
+        ctx.shadowBlur = 10;
+        ctx.fillText("🤖 BOT UPTIME STATUS", 240, 70);
+        ctx.shadowBlur = 0;
 
-    ctx.lineWidth = 6;
-    ctx.shadowColor = "#00fff7";
-    ctx.shadowBlur = 20;
-    ctx.strokeStyle = "#00fff7";
-    ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+        // Divider
+        ctx.strokeStyle = "rgba(255,255,255,0.35)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(30, 100);
+        ctx.lineTo(W - 30, 100);
+        ctx.stroke();
 
-    await module.exports.saveStartTimestamp(startTime);
+        // Info text
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "20px Arial";
+        let y = 150;
+        const leftX = 60;
+        const lineGap = 36;
 
-    return api.sendMessage(
-      { body: " ", attachment: canvas.toBuffer() },
-      event.threadID,
-      event.messageID
-    );
+        ctx.fillText(`⏱ Uptime: ${uptimeMessage}`, leftX, y); y += lineGap;
+        ctx.fillText(`🖥 Platform: ${os.platform()}   •   Arch: ${os.arch()}   •   Cores: ${(os.cpus() || []).length}`, leftX, y); y += lineGap;
+        ctx.fillText(`🧩 OS: ${os.release()}   •   📡 Ping: ${Math.max(0, Date.now() - (event?.timestamp || Date.now()))}ms`, leftX, y);
+        y += 50;
+
+        // Bars helper (with gradient fill)
+        const drawBar = (label, percent, x, yBar, width, height, c1, c2) => {
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "20px Arial";
+          ctx.fillText(`${label}: ${percent.toFixed(1)}%`, leftX, yBar - 10);
+
+          // background
+          ctx.fillStyle = "rgba(255,255,255,0.15)";
+          ctx.fillRect(x, yBar, width, height);
+
+          // gradient fill
+          const g = ctx.createLinearGradient(x, yBar, x + width, yBar);
+          g.addColorStop(0, c1);
+          g.addColorStop(1, c2);
+          const fillWidth = Math.max(0, Math.min(width, (percent / 100) * width));
+          ctx.fillStyle = g;
+          ctx.fillRect(x, yBar, fillWidth, height);
+
+          // border
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = "#ffffff";
+          ctx.strokeRect(x, yBar, width, height);
+        };
+
+        // CPU bar
+        drawBar("⚙️ CPU Usage", cpuPercent, 300, y - 20, 520, 26, "#00ffcc", "#0077ff");
+        y += 70;
+
+        // RAM bar
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "20px Arial";
+        ctx.fillText(
+          `📦 RAM: ${byte2mb(procMemBytes)} / ${byte2mb(totalMem)} (${ramPercent.toFixed(1)}%)`,
+          leftX,
+          y - 10
+        );
+        // wider bar for RAM
+        const ramX = leftX, ramW = W - leftX * 2;
+        // background
+        ctx.fillStyle = "rgba(255,255,255,0.15)";
+        ctx.fillRect(ramX, y, ramW, 26);
+        // fill
+        const rg = ctx.createLinearGradient(ramX, y, ramX + ramW, y);
+        rg.addColorStop(0, "#ff007f");
+        rg.addColorStop(1, "#ffae00");
+        const ramFill = Math.max(0, Math.min(ramW, (ramPercent / 100) * ramW));
+        ctx.fillStyle = rg;
+        ctx.fillRect(ramX, y, ramFill, 26);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#ffffff";
+        ctx.strokeRect(ramX, y, ramW, 26);
+
+        // Frame glow
+        ctx.lineWidth = 6;
+        ctx.shadowColor = "rgba(0,255,247,0.7)";
+        ctx.shadowBlur = 18;
+        ctx.strokeStyle = "#00fff7";
+        ctx.strokeRect(20, 20, W - 40, H - 40);
+        ctx.shadowBlur = 0;
+
+        attachment = canvas.toBuffer();
+      }
+    } catch (e) {
+      console.warn("Canvas not available, sending text-only:", e?.message || e);
+    }
+
+    await saveStartTimestamp(startTime);
+
+    if (attachment) {
+      return api.sendMessage(
+        { body: textBody, attachment },
+        event.threadID,
+        event.messageID
+      );
+    } else {
+      return api.sendMessage(textBody, event.threadID, event.messageID);
+    }
   } catch (err) {
-    console.error("Uptime command error:", err);
-    return api.sendMessage("❌ Error while generating uptime card.", event.threadID);
+    console.error("uptime command fatal error:", err);
+    return api.sendMessage("❌ Error while generating uptime info. Check console logs.", event.threadID);
   }
 };
