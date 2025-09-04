@@ -11,7 +11,7 @@ module.exports.config = {
   version: "1.0.0",
   hasPermssion: 0,
   credits: "ARI",
-  description: "Show real uptime of bot,
+  description: "Show real uptime of bot",
   commandCategory: "System",
   usages: "uptime",
   cooldowns: 3,
