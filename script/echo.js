@@ -22,11 +22,11 @@ module.exports.run = async function({ api, event, args }) {
     return api.sendMessage("❌ Please provide a question. Example: echo Hello!", threadID, messageID);
   }
 
-  api.sendMessage("✨ Echo AI is typing...", threadID, async (err, info) => {
+  api.sendMessage("⏳ Echo AI is typing...", threadID, async (err, info) => {
     if (err) return;
 
     try {
-      const { data } = await axios.post("https://echoai-api.onrender.com/api/ask", {
+      const { data } = await axios.post("https://echoai-api.onrender.com/echo", {
         question: promptText
       });
 
@@ -38,7 +38,7 @@ module.exports.run = async function({ api, event, args }) {
 
         const replyMessage = 
 `╔════════════════╗
-  🤖 Echo AI
+  🤖 𝐄𝐜𝐡𝐨 𝐀𝐈 : crated by Ari
 ╚════════════════╝
 
 ${responseText}
