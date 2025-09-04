@@ -64,7 +64,8 @@ module.exports.run = async ({ api, event }) => {
     ctx.roundRect(60, 60, width - 120, height - 120, 40);
     ctx.fill();
     ctx.stroke();
-
+    
+    ctx.textAlign = "center"
     ctx.font = "bold 65px Inter";
     ctx.fillStyle = "#f8fafc";
     ctx.shadowColor = "#38bdf8";
@@ -143,13 +144,12 @@ module.exports.run = async ({ api, event }) => {
     ctx.font = "28px Inter";
     ctx.fillStyle = "#cbd5e1";
     ctx.fillText(`OS: ${osInfo.platform} (${osInfo.architecture})`, 700, 380);
-    ctx.fillText(`Host: ${osInfo.hostname}`, 700, 430);
-    ctx.fillText(`Release: ${osInfo.release}`, 700, 480);
+    ctx.fillText(`Release: ${osInfo.release}`, 700, 430);
 
-    ctx.font = "22px Inter";
+    ctx.font = "20px Inter";
     ctx.fillStyle = "#94a3b8";
     ctx.textAlign = "right";
-    ctx.fillText("Autobot by ARI", width - 80, height - 50);
+    ctx.fillText("Autobot by ARI", width - 80, height - 30);
 
     const outDir = path.join(__dirname, "cache");
     if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
