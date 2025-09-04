@@ -102,12 +102,12 @@ module.exports.run = async ({ api, event }) => {
     ctx.font = "28px Inter";
     ctx.fillStyle = "#cbd5e1";
     ctx.fillText(`[OS] ${osInfo.platform} (${osInfo.architecture})`, 650, 380);
-    ctx.fillText(`[REL] ${osInfo.release}`, 650, 480);
+    ctx.fillText(`[REL] ${osInfo.release}`, 650, 430);
 
     ctx.font = "20px Inter";
     ctx.fillStyle = "#94a3b8";
     ctx.textAlign = "right";
-    ctx.fillText("Autobot by ARI", width - 80, height - 40);
+    ctx.fillText("Autobot by ARI", width - 80, height - 38);
 
     const outDir = path.join(__dirname, "cache");
     if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
