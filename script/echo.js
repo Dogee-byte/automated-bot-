@@ -4,8 +4,8 @@ let userMemory = {};
 
 module.exports.config = {
   name: "echo",
-  version: "3.0",
-  author: "Ari (api by ari)",
+  version: "3.1",
+  author: "ari (api by ari)",
   countDown: 5,
   role: 0,
   shortDescription: "Talk with Echo AI",
@@ -30,19 +30,30 @@ module.exports.run = async function ({ message, args, event }) {
 
     userMemory[userId].push({ role: "user", content: userInput });
 
-    const response = await axios.post("https://echoai-api.onrender.com/api/ask", {
-      question: userInput,
-      history: userMemory[userId]
-    });
+    let reply;
 
-    const reply = response.data.answer || "⚠️ Echo AI didn’t reply.";
+    try {
+      const res = await axios.post("https://echoai-api.onrender.com/api/ask", {
+        question: userInput,
+        history: userMemory[userId]
+      });
+      reply = res.data.answer;
+    } catch (e) {
+      const res = await axios.post("https://echoai-api.onrender.com", {
+        question: userInput,
+        history: userMemory[userId]
+      });
+      reply = res.data.answer;
+    }
+
+    if (!reply) reply = "⚠️ Echo AI didn’t reply.";
 
     userMemory[userId].push({ role: "assistant", content: reply });
 
     message.reply(reply);
 
   } catch (err) {
-    console.error(err);
+    console.error("❌ API Error:", err.response?.data || err.message);
     message.reply("❌ Error: Cannot connect to Echo AI API.");
   }
 };
