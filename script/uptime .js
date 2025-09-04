@@ -66,7 +66,7 @@ module.exports.run = async ({ api, event }) => {
 
     ctx.font = "bold 60px Inter";
     ctx.fillStyle = "#f8fafc";
-    ctx.fillText("Bot Uptime Status", 80, 130);
+    ctx.fillText("BOT UPTIME STATUS", 80, 130);
 
     ctx.font = "bold 70px Inter";
     ctx.fillStyle = "#38bdf8";
