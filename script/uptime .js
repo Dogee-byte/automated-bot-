@@ -132,7 +132,6 @@ module.exports.run = async function ({ api, event }) {
     ctx.fillStyle = "#94a3b8";
     ctx.fillText(`Started: ${startedAt}`, 360, 250);
 
-    // RAM
     ctx.font = "26px Inter";
     ctx.fillStyle = "#cbd5e1";
     ctx.fillText("Memory Usage:", 360, 310);
@@ -148,7 +147,6 @@ module.exports.run = async function ({ api, event }) {
     ctx.strokeStyle = "#fef3c7";
     ctx.strokeRect(barX, barY, barW, barH);
 
-    // CPU
     ctx.font = "26px Inter";
     ctx.fillStyle = "#cbd5e1";
     ctx.fillText("CPU Load:", 360, 430);
@@ -164,18 +162,15 @@ module.exports.run = async function ({ api, event }) {
     ctx.strokeStyle = "#bbf7d0";
     ctx.strokeRect(cpuBarX, cpuBarY, cpuBarW, cpuBarH);
 
-    // Footer
     ctx.font = "20px Inter";
     ctx.fillStyle = "#64748b";
     ctx.fillText("Autobot by ARI", width - 280, height - 30);
 
-    // Save output
     const outDir = path.join(__dirname, "cache");
     if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
     const outPath = path.join(outDir, `uptime_${Date.now()}.png`);
     fs.writeFileSync(outPath, canvas.toBuffer("image/png"));
 
-    // Send to chat
     await api.sendMessage(
       { body: "", attachment: fs.createReadStream(outPath) },
       threadID,
