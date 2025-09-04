@@ -1,20 +1,24 @@
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
+const axios = require("axios");
 const { createCanvas, loadImage, registerFont } = require("canvas");
 const moment = require("moment-timezone");
-const axios = require("axios");
 
 module.exports.config = {
   name: "uptime",
-  version: "1.2.0",
+  version: "1.1.0",
   hasPermssion: 0,
   credits: "ARI",
-  description: "Show real uptime of bot with canvas",
+  description: "Show real uptime of bot",
   commandCategory: "System",
   usages: "uptime",
   cooldowns: 3,
 };
+
+if (!global.botStartTime) {
+  global.botStartTime = Date.now();
+}
 
 try {
   registerFont(path.join(__dirname, "../fonts/Inter-Bold.ttf"), { family: "Inter", weight: "700" });
@@ -45,27 +49,12 @@ function getSystemStats() {
   };
 }
 
-function drawRoundRect(ctx, x, y, w, h, r) {
-  if (w < 2 * r) r = w / 2;
-  if (h < 2 * r) r = h / 2;
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + w, y, x + w, y + h, r);
-  ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r);
-  ctx.arcTo(x, y, x + w, y, r);
-  ctx.closePath();
-  return ctx;
-}
-
 module.exports.run = async function ({ api, event }) {
   const threadID = event.threadID;
   const messageID = event.messageID;
 
   try {
-    const uptimeSec = global.botStartTime
-      ? Math.floor((Date.now() - global.botStartTime) / 1000)
-      : Math.floor(process.uptime());
+    const uptimeSec = Math.floor((Date.now() - global.botStartTime) / 1000);
     const uptimeText = formatUptime(uptimeSec);
 
     const startedAt = moment(Date.now() - uptimeSec * 1000)
@@ -75,22 +64,12 @@ module.exports.run = async function ({ api, event }) {
     const stats = getSystemStats();
     const botName = (global?.config?.BOTNAME) || "ECHO AI";
 
-    let avatarUrl = "https://i.imgur.com/I3Milxg.png"; 
-
+    const avatarUrl = "https://i.imgur.com/I3Milxg.png";
+    
     try {
-      if (avatarUrl) {
-        avatarImg = await loadImage(avatarUrl);
-      } else {
-        const botID = api.getCurrentUserID();
-        const avatarRes = await axios.get(
-          `https://graph.facebook.com/${botID}/picture?height=512&width=512&redirect=false`
-        );
-        const realUrl = avatarRes.data?.data?.url;
-        if (realUrl) avatarImg = await loadImage(realUrl);
-      }
-    } catch (e) {
-      console.error("Failed to load avatar:", e.message);
-    }
+      const { data } = await axios.get(avatarUrl, { responseType: "arraybuffer" });
+      avatarBuffer = Buffer.from(data);
+    } catch {}
 
     const width = 1200, height = 600;
     const canvas = createCanvas(width, height);
@@ -103,10 +82,11 @@ module.exports.run = async function ({ api, event }) {
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, width, height);
 
+    // Card box
     ctx.fillStyle = "rgba(255,255,255,0.07)";
     ctx.strokeStyle = "rgba(255,255,255,0.3)";
     ctx.lineWidth = 3;
-    drawRoundRect(ctx, 320, 50, 820, 500, 30);
+    ctx.roundRect(320, 50, 820, 500, 30);
     ctx.fill();
     ctx.stroke();
 
@@ -119,8 +99,9 @@ module.exports.run = async function ({ api, event }) {
     ctx.arc(avatarX + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2, 0, Math.PI * 2);
     ctx.closePath();
     ctx.clip();
-    if (avatarImg) {
-      ctx.drawImage(avatarImg, avatarX, avatarY, avatarSize, avatarSize);
+    if (avatarBuffer) {
+      const img = await loadImage(avatarBuffer);
+      ctx.drawImage(img, avatarX, avatarY, avatarSize, avatarSize);
     } else {
       ctx.fillStyle = "#1f2937";
       ctx.fillRect(avatarX, avatarY, avatarSize, avatarSize);
@@ -151,6 +132,7 @@ module.exports.run = async function ({ api, event }) {
     ctx.fillStyle = "#94a3b8";
     ctx.fillText(`Started: ${startedAt}`, 360, 250);
 
+    // RAM
     ctx.font = "26px Inter";
     ctx.fillStyle = "#cbd5e1";
     ctx.fillText("Memory Usage:", 360, 310);
@@ -166,13 +148,14 @@ module.exports.run = async function ({ api, event }) {
     ctx.strokeStyle = "#fef3c7";
     ctx.strokeRect(barX, barY, barW, barH);
 
+    // CPU
     ctx.font = "26px Inter";
     ctx.fillStyle = "#cbd5e1";
     ctx.fillText("CPU Load:", 360, 430);
     ctx.font = "bold 36px Inter";
     ctx.fillStyle = "#22c55e";
     ctx.fillText(`${stats.cpu.toFixed(2)} load`, 360, 470);
-
+    
     const cpuBarW = 400, cpuBarH = 25, cpuBarX = 360, cpuBarY = 490;
     ctx.fillStyle = "#1e293b";
     ctx.fillRect(cpuBarX, cpuBarY, cpuBarW, cpuBarH);
@@ -181,15 +164,18 @@ module.exports.run = async function ({ api, event }) {
     ctx.strokeStyle = "#bbf7d0";
     ctx.strokeRect(cpuBarX, cpuBarY, cpuBarW, cpuBarH);
 
+    // Footer
     ctx.font = "20px Inter";
     ctx.fillStyle = "#64748b";
     ctx.fillText("Autobot by ARI", width - 280, height - 30);
 
+    // Save output
     const outDir = path.join(__dirname, "cache");
     if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
     const outPath = path.join(outDir, `uptime_${Date.now()}.png`);
     fs.writeFileSync(outPath, canvas.toBuffer("image/png"));
 
+    // Send to chat
     await api.sendMessage(
       { body: "", attachment: fs.createReadStream(outPath) },
       threadID,
