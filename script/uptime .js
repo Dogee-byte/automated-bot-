@@ -107,7 +107,7 @@ module.exports.run = async ({ api, event }) => {
     ctx.font = "20px Inter";
     ctx.fillStyle = "#94a3b8";
     ctx.textAlign = "right";
-    ctx.fillText("Autobot by ARI", width - 80, height - 38);
+    ctx.fillText("Autobot by ARI", width - 80, height - 36);
 
     const outDir = path.join(__dirname, "cache");
     if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
