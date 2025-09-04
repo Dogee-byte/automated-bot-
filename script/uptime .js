@@ -34,7 +34,7 @@ function formatUptime(seconds) {
   if (days > 0) parts.push(`${days}d`);
   if (hours > 0) parts.push(`${hours}h`);
   if (minutes > 0) parts.push(`${minutes}m`);
-  parts.push(`${secs}s`);
+  if (seconds> 0) parts.push(`${secs}s`);
   return parts.join(" ");
 }
 
@@ -64,13 +64,23 @@ module.exports.run = async function ({ api, event }) {
     const stats = getSystemStats();
     const botName = (global?.config?.BOTNAME) || "ECHO AI";
 
-    const avatarUrl = "https://i.imgur.com/I3Milxg.png";
-    let avatarBuffer = null;
-    try {
-      const { data } = await axios.get(avatarUrl, { responseType: "arraybuffer" });
-      avatarBuffer = Buffer.from(data);
-    } catch {}
+    let avatarUrl = "https://i.imgur.com/GQCNq9R.png"; 
 
+    try {
+      if (avatarUrl) {
+        avatarImg = await loadImage(avatarUrl);
+      } else {
+        const botID = api.getCurrentUserID();
+        const avatarRes = await axios.get(
+          `https://graph.facebook.com/${botID}/picture?height=512&width=512&redirect=false`
+        );
+        const realUrl = avatarRes.data?.data?.url;
+        if (realUrl) avatarImg = await loadImage(realUrl);
+      }
+    } catch (e) {
+      console.error("Failed to load avatar:", e.message);
+    }
+    
     const width = 1200, height = 600;
     const canvas = createCanvas(width, height);
     const ctx = canvas.getContext("2d");
@@ -82,7 +92,6 @@ module.exports.run = async function ({ api, event }) {
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, width, height);
 
-    // Card box
     ctx.fillStyle = "rgba(255,255,255,0.07)";
     ctx.strokeStyle = "rgba(255,255,255,0.3)";
     ctx.lineWidth = 3;
