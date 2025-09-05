@@ -2,7 +2,7 @@ const axios = require("axios");
 
 module.exports.config = {
   name: "ash",
-  version: "2.0.0",
+  version: "2.1.0",
   aliases: ["Ash", "Ashley", "baby"],
   credit: "Ari (API by Ari)",
   description: "Talk with Ashley (clingy gf 🥰💓)",
@@ -16,11 +16,20 @@ module.exports.run = async function ({ api, event, args }) {
 
   const userMessage = args.join(" ");
 
+  let character = "ashley"; 
+  if (/jealous/i.test(userMessage)) {
+    character = "ashley_jealous";
+  } else if (/playful/i.test(userMessage)) {
+    character = "ashley_playful";
+  }
+
+  character = character.toLowerCase();
+
   try {
     const res = await axios.post("https://ashley-api.onrender.com/chat", {
-      character: "Ashley",     
-      message: userMessage,
-      user: event.senderID     
+      character,            
+      message: userMessage, 
+      user: event.senderID  
     });
 
     let reply = res.data.reply || "Mmm, I didn’t catch that babe~ 😘";
