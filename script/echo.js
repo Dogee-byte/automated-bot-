@@ -49,9 +49,9 @@ module.exports.run = async function ({ api, event, args }) {
       const reply = data.ai?.trim() || "⚠️ Echo AI did not return a response.";
 
       const finalMessage =
-`╔════════════════════════╗
-   ✨ 𝗘𝗰𝗵𝗼 𝗔𝗜 : created by ARI
-╚════════════════════════╝
+`╔════════════════╗
+  ⚙️ 𝗘𝗰𝗵𝗼 𝗔𝗜 : created by ARI
+╚════════════════╝
 
 ${reply}
 
