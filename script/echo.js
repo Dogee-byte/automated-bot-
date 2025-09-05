@@ -2,46 +2,43 @@ const axios = require("axios");
 
 module.exports.config = {
   name: "echo",
-  version: "1.0.1",
+  version: "1.1.0",
   role: 0,
   hasPrefix: false,
-  aliases: [],
-  description: "Ask Echo AI API",
+  description: "Ask Echo AI anything",
   usage: "echo [your question]",
-  credits: "Ari"
+  credits: "Ari (api by ari)",
 };
 
-module.exports.run = async function({ api, event, args }) {
+module.exports.run = async function ({ api, event, args }) {
   const question = args.join(" ").trim();
   const threadID = event.threadID;
   const messageID = event.messageID;
 
   if (!question) {
-    return api.sendMessage(
-      "⚠️ Please provide a question.\n\n💡 Example: echo What is AI?",
-      threadID,
-      messageID
-    );
+    return api.sendMessage("❌ Please provide a question.", threadID, messageID);
   }
 
   try {
-    const { data } = await axios.post("https://echo-ai.onrender.com/echo", {
-      question
-    }, {
-      headers: { "Content-Type": "application/json" }
+    const { data } = await axios.post("https://echoai-api.onrender.com/chat", {
+      message: question,
     });
 
-    const reply = 
-`┏━━━━━━━━━━━━━━━┓
-   🤖 𝐄𝐂𝐇𝐎 𝐀𝐈  
-┗━━━━━━━━━━━━━━━┛
-📥 𝗤𝘂𝗲𝘀𝘁𝗶𝗼𝗻: ${question}
-📤 𝗔𝗻𝘀𝘄𝗲𝗿: ${data.answer}
+    const reply = data.ai?.trim() || "⚠️ Echo AI did not return a response.";
+
+    const finalMessage =
+`✨ 𝗘𝗰𝗵𝗼 𝗔𝗜
+━━━━━━━━━━━━━━━━━━
+${reply}
 ━━━━━━━━━━━━━━━━━━`;
 
-    api.sendMessage(reply, threadID, messageID);
-  } catch (err) {
-    console.error("Echo Command Error:", err.message);
-    api.sendMessage("❌ Error: Unable to connect to Echo API.", threadID, messageID);
+    api.sendMessage(finalMessage, threadID, messageID);
+  } catch (error) {
+    console.error("Echo AI Command Error:", error);
+    api.sendMessage(
+      "❌ Error: " + (error.response?.data?.error || error.message),
+      threadID,
+      messageID
+    );
   }
 };
