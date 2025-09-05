@@ -2,10 +2,10 @@ const axios = require("axios");
 
 module.exports.config = {
   name: "echo",
-  version: "1.2.0",
+  version: "3.0.0",
   role: 0,
   hasPrefix: false,
-  description: "Ask Echo AI anything (random model each time)",
+  description: "Ask Echo AI anything",
   usage: "echo [your question]",
   credits: "Ari (API by ARI)",
 };
@@ -40,10 +40,7 @@ module.exports.run = async function ({ api, event, args }) {
     }, 500);
 
     try {
-      const models = ["claude", "gpt", "llama"];
-      const randomModel = models[Math.floor(Math.random() * models.length)];
-
-      const { data } = await axios.post(`https://echoai-api.onrender.com/chat/${randomModel}`, {
+      const { data } = await axios.post(`https://echoai-api.onrender.com/chat`, {
         message: question,
       });
 
@@ -52,11 +49,13 @@ module.exports.run = async function ({ api, event, args }) {
       const reply = data.ai?.trim() || "⚠️ Echo AI did not return a response.";
 
       const finalMessage =
-`✨ 𝗘𝗰𝗵𝗼 𝗔𝗜 (${randomModel.toUpperCase()})
-━━━━━━━━━━━━━━━━━━
+`╔════════════════════════╗
+   ✨ 𝗘𝗰𝗵𝗼 𝗔𝗜 : created by ARI
+╚════════════════════════╝
+
 ${reply}
-━━━━━━━━━━━━━━━━━━
-👑 Owner: Ari`;
+
+━━━━━━━━━━━━━━━━━━`;
 
       try {
         api.editMessage(finalMessage, info.messageID);
