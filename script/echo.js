@@ -40,7 +40,7 @@ module.exports.run = async function ({ api, event, args }) {
     }, 500);
 
     try {
-      const models = ["claude", "gpt", "mistral", "llama"];
+      const models = ["claude", "gpt", "llama"];
       const randomModel = models[Math.floor(Math.random() * models.length)];
 
       const { data } = await axios.post(`https://echoai-api.onrender.com/chat/${randomModel}`, {
