@@ -2,12 +2,12 @@ const axios = require("axios");
 
 module.exports.config = {
   name: "echo",
-  version: "1.5.0",
+  version: "1.0.0",
   role: 0,
   hasPrefix: false,
   description: "Ask Echo AI anything",
   usage: "echo [your question]",
-  credits: "Ari (api by ari)",
+  credits: "Ari (API by echoai-api.onrender.com)",
 };
 
 module.exports.run = async function ({ api, event, args }) {
@@ -52,13 +52,13 @@ module.exports.run = async function ({ api, event, args }) {
 ━━━━━━━━━━━━━━━━━━
 ${reply}
 ━━━━━━━━━━━━━━━━━━
-👑 Owner: 𝗔𝗿𝗶`;
+👑 Owner: Ari`;
 
       api.editMessage(finalMessage, info.messageID);
 
     } catch (error) {
       clearInterval(interval);
-      console.error("Echo AI Command Error:", error);
+      console.error("Echo AI Command Error:", error.response?.data || error.message);
       api.editMessage(
         "❌ Error: " + (error.response?.data?.error || error.message),
         info.messageID
