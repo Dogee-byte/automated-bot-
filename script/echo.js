@@ -7,7 +7,7 @@ module.exports.config = {
   hasPrefix: false,
   description: "Ask Echo AI anything",
   usage: "echo [your question]",
-  credits: "Ari (API by Ari)",
+  credits: "Ari (api by ari)",
 };
 
 module.exports.run = async function ({ api, event, args }) {
@@ -16,39 +16,53 @@ module.exports.run = async function ({ api, event, args }) {
   const messageID = event.messageID;
 
   if (!question) {
-    return api.sendMessage("❌ 𝘗𝘭𝘦𝘢𝘴𝘦 𝘱𝘳𝘰𝘷𝘪𝘥𝘦 𝘢 𝘲𝘶𝘦𝘴𝘵𝘪𝘰𝘯.", threadID, messageID);
+    return api.sendMessage("[❕] Please provide a question.", threadID, messageID);
   }
 
-  api.sendMessage("⌛ Echo AI is thinking...\n■□□□□", threadID, async (err, info) => {
-    if (err) return;
+  let progress = 0;
+  const loadingMsg = await api.sendMessage("⏳ Echo AI is thinking...", threadID);
 
-    try {
-      const bars = ["■■□□□", "■■■□□", "■■■■□", "■■■■■"];
-      for (let i = 0; i < bars.length; i++) {
-        await new Promise(r => setTimeout(r, 600));
-        api.editMessage(`⌛ Echo AI is thinking...\n${bars[i]}`, info.messageID);
-      }
+  const interval = setInterval(async () => {
+    progress = (progress + 5) % 105; 
+    const barLength = 20;
+    const filled = Math.floor((progress / 100) * barLength);
+    const empty = barLength - filled;
+    const loadingBar = "█".repeat(filled) + "░".repeat(empty);
 
-      const { data } = await axios.post("https://echoai-api.onrender.com/chat", {
-        message: question,
-      });
+    await api.editMessage(
+      `⏳ Echo AI is thinking...\n\n[${loadingBar}] ${progress}%`,
+      loadingMsg.messageID,
+      threadID
+    );
+  }, 500);
 
-      const reply = data.ai?.trim() || "⚠️ Echo AI did not return a response.";
+  try {
+    const { data } = await axios.post("https://echoai-api.onrender.com/chat", {
+      message: question,
+    });
 
-      const finalMessage =
-`✨ 𝐄𝐜𝐡𝐨 𝐀𝐈
-━━━━━━━━━━━━━━━━━━
-${reply}
-━━━━━━━━━━━━━━━━━━
-👑 𝐎𝐰𝐧𝐞𝐫: 𝗔𝗿𝗶`;
+    clearInterval(interval);
 
-      api.editMessage(finalMessage, info.messageID);
-    } catch (error) {
-      console.error("Echo AI Command Error:", error);
-      api.editMessage(
-        "❌ Error: " + (error.response?.data?.error || error.message),
-        info.messageID
-      );
-    }
-  });
+    const reply = data.ai?.trim() || "⚠️ Echo AI did not return a response.";
+
+    const styles = [
+      `🌌 Ｅｃｈｏ ＡＩ\n━━━━━━━━━━━━━━\n${reply}\n━━━━━━━━━━━━━━`,
+      `⚡ 𝑬𝒄𝒉𝒐 𝑨𝑰 ⚡\n➖➖➖➖➖➖\n${reply}\n➖➖➖➖➖➖`,
+      `🔥 ＥＣＨＯ ＡＩ 🔥\n▬▬▬▬▬▬▬▬▬▬▬▬▬\n${reply}\n▬▬▬▬▬▬▬▬▬▬▬▬▬`,
+      `✨ 𝙀𝘾𝙃𝙊 𝘼𝙄 ✨\n━━━━━━━━━━━━━━━\n${reply}\n━━━━━━━━━━━━━━━`,
+      `💎 ᴇᴄʜᴏ ᴀɪ 💎\n─────────────\n${reply}\n─────────────`
+    ];
+
+    const finalMessage = styles[Math.floor(Math.random() * styles.length)];
+
+    await api.editMessage(finalMessage, loadingMsg.messageID, threadID);
+  } catch (error) {
+    clearInterval(interval);
+    console.error("Echo AI Command Error:", error);
+    api.editMessage(
+      "❌ Error: " + (error.response?.data?.error || error.message),
+      loadingMsg.messageID,
+      threadID
+    );
+  }
 };
