@@ -60,7 +60,7 @@ module.exports.run = async function ({ api, event, args }) {
   }
 
   return api.sendMessage(
-    "Usage:\n• ash on → enable auto-reply\n• ash off → disable auto-reply\n• ash status → check if ON/OFF",
+    "Hey! I'м Aѕнley yoυ cαɴ cαll мe Aѕн ғor ѕнorт 🥰🫶\n\nUsage:\n• ash on → enable auto-reply\n• ash off → disable auto-reply\n• ash status → check if ON/OFF",
     event.threadID,
     event.messageID
   );
