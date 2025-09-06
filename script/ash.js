@@ -1,14 +1,17 @@
 const axios = require("axios");
 const fs = require("fs");
 
-let autoReplyEnabled = true; 
 const memoryFile = __dirname + "/memory.json";
 let memory = {};
+let autoReplyEnabled = true; 
 
 if (fs.existsSync(memoryFile)) {
   try {
     memory = JSON.parse(fs.readFileSync(memoryFile, "utf8"));
     console.log("✅ Ashley memory loaded.");
+    if (typeof memory.autoReplyEnabled !== "undefined") {
+      autoReplyEnabled = memory.autoReplyEnabled; 
+    }
   } catch (err) {
     console.error("❌ Failed to load memory.json:", err.message);
     memory = {};
@@ -19,15 +22,16 @@ if (fs.existsSync(memoryFile)) {
 }
 
 function saveMemory() {
+  memory.autoReplyEnabled = autoReplyEnabled; 
   fs.writeFileSync(memoryFile, JSON.stringify(memory, null, 2));
 }
 
 module.exports.config = {
   name: "ash",
-  version: "3.0.0",
-  credit: "Ari (api by ari",
+  version: "3.1.0",
+  credit: "Ari (api by ari)",
   aliases: ["Ashley", "Ash", "Baby"],
-  description: "Ashley auto-reply clingy gf 💕 with memory + on/off toggle",
+  description: "Ashley auto-reply clingy gf 💕",
   category: "fun",
   usePrefix: true
 };
@@ -37,11 +41,13 @@ module.exports.run = async function ({ api, event, args }) {
 
   if (cmd === "on") {
     autoReplyEnabled = true;
+    saveMemory();
     return api.sendMessage("✅ Ashley auto-reply is now ON, baby 💕", event.threadID, event.messageID);
   }
 
   if (cmd === "off") {
     autoReplyEnabled = false;
+    saveMemory();
     return api.sendMessage("❌ Ashley auto-reply is now OFF, babe 😢", event.threadID, event.messageID);
   }
 
@@ -62,7 +68,7 @@ module.exports.run = async function ({ api, event, args }) {
 
 module.exports.handleEvent = async function ({ api, event }) {
   if (!event.body) return;
-  if (event.senderID == api.getCurrentUserID()) return; 
+  if (event.senderID == api.getCurrentUserID()) return;
 
   if (!autoReplyEnabled) return; 
 
