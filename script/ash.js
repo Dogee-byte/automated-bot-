@@ -75,7 +75,7 @@ module.exports.handleEvent = async function ({ api, event }) {
   const userId = event.senderID;
   if (!memory[userId]) memory[userId] = [];
 
-  const aliases = ["ash", "ashley"]; 
+  const aliases = ["ashley"]; 
   const triggerWords = ["love", "miss", "cute", "hun", "mwa", "kiss", "❤️", "💕", "💖", "💞"]; // sweet triggers
   const lowerBody = event.body.toLowerCase();
 
