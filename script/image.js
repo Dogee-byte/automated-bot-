@@ -1,116 +1,65 @@
+const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
-const axios = require("axios");
-const FormData = require("form-data");
-const os = require("os");
 
-module.exports.config = {
-  name: "image",
-  aliases: ["img", "edit"],
-  description: "Generate or edit images",
-  credit: "ARI (api by ari)",
-  usage: "[generate|edit] <prompt> (attach image optional for edit)",
-};
+module.exports = {
+    config: {
+        name: "image",
+        aliases: [],
+        version: "1.1",
+        author: "real owner (converted by ari)",
+        countDown: 0,
+        role: 0,
+        shortDescription: "Edit or generate an image using Gemini-Edit",
+        category: "𝗔𝗜",
+        guide: {
+            en: "{pn} <text> (reply to image optional)",
+        },
+    },
+    onStart: async function ({ message, event, args, api }) {
+        const prompt = args.join(" ");
+        if (!prompt) return message.reply("Please provide the text to edit or generate.");
 
-function getTempFileName(prefix = "img") {
-  return path.join(os.tmpdir(), `${prefix}_${Date.now()}_${Math.floor(Math.random() * 1000)}.png`);
-}
+        const apiurl = "https://gemini-edit-omega.vercel.app/edit";
+        api.setMessageReaction("⏳", event.messageID, () => {}, true);
 
-async function fetchImageToFile(url, tempFile) {
-  const res = await axios.get(url, { responseType: "arraybuffer" });
-  const buffer = Buffer.from(res.data);
-  await fs.promises.writeFile(tempFile, buffer);
-}
+        try {
+            
+            let params = { prompt };
+            if (event.messageReply && event.messageReply.attachments && event.messageReply.attachments[0]) {
+                params.imgurl = event.messageReply.attachments[0].url;
+            }
 
-async function processImage({ api, event, prompt, type, mainImageUrl = null, maskUrl = null }) {
-  try {
-    let data;
+            
+            const res = await axios.get(apiurl, { params });
 
-    if (type === "generate") {
-      const response = await axios.post("https://imageeditor-api.onrender.com/generate", { prompt });
-      data = response.data;
-      if (!data.file || !data.preview) throw new Error("Failed to generate image.");
-    } 
-    else if (type === "edit") {
-      if (!mainImageUrl) throw new Error("No main image URL provided.");
+            if (!res.data || !res.data.images || !res.data.images[0]) {
+                api.setMessageReaction("❌", event.messageID, () => {}, true);
+                return message.reply("❌ Failed to get image.");
+            }
 
-      const form = new FormData();
-      form.append("prompt", prompt);
+           
+            const base64Image = res.data.images[0].replace(/^data:image\/\w+;base64,/, "");
+            const imageBuffer = Buffer.from(base64Image, "base64");
 
-      const mainBuffer = (await axios.get(mainImageUrl, { responseType: "arraybuffer" })).data;
-      form.append("image", mainBuffer, { filename: "input.png" });
+         
+            const cacheDir = path.join(__dirname, "cache");
+            if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
 
-      if (maskUrl) {
-        const maskBuffer = (await axios.get(maskUrl, { responseType: "arraybuffer" })).data;
-        form.append("mask", maskBuffer, { filename: "mask.png" });
-      }
+            const imagePath = path.join(cacheDir, `${Date.now()}.png`);
+            fs.writeFileSync(imagePath, imageBuffer);
 
-      const response = await axios.post("https://imageeditor-api.onrender.com/edit", form, {
-        headers: form.getHeaders(),
-      });
+            api.setMessageReaction("✅", event.messageID, () => {}, true);
 
-      data = response.data;
-      if (!data.file || !data.preview) throw new Error("Failed to edit image.");
+            await message.reply({ attachment: fs.createReadStream(imagePath) }, event.threadID, () => {
+                fs.unlinkSync(imagePath);
+                message.unsend(message.messageID);
+            }, event.messageID);
+
+        } catch (error) {
+            console.error("❌ API ERROR:", error.response?.data || error.message);
+            api.setMessageReaction("❌", event.messageID, () => {}, true);
+            return message.reply("Error generating/editing image.");
+        }
     }
-
-    const tempFile = getTempFileName(type === "generate" ? "gen" : "edit");
-    await fetchImageToFile(data.preview, tempFile);
-
-    await api.sendMessage(
-      {
-        body: type === "generate"
-          ? `✅ Generated image for:\n"${prompt}"`
-          : `✏️ Edited image with:\n"${prompt}"`,
-        attachment: fs.createReadStream(tempFile),
-      },
-      event.threadID
-    );
-
-    fs.unlink(tempFile, () => {});
-  } catch (err) {
-    console.error(err);
-    await api.sendMessage(
-      `⚠️ Error while ${type === "generate" ? "generating" : "editing"} image: ${err.message}`,
-      event.threadID
-    );
-  }
-}
-
-module.exports.run = async function ({ api, event, args }) {
-  let subcommand = args[0]?.toLowerCase();
-  const attachments = event.messageAttachments || [];
-
-  if (!["generate", "gen", "edit"].includes(subcommand)) {
-    subcommand = attachments.length ? "edit" : "generate";
-  } else if (subcommand === "gen") {
-    subcommand = "generate";
-  }
-
-  const promptStartIndex = ["generate", "gen", "edit"].includes(args[0]?.toLowerCase()) ? 1 : 0;
-  const prompt = args.slice(promptStartIndex).join(" ").trim();
-
-  if (!prompt) {
-    return api.sendMessage(
-      "❌ Please provide a prompt for generating or editing an image.\n📌 Usage:\n- image generate <prompt>\n- image edit <prompt> (attach image, optional mask)",
-      event.threadID
-    );
-  }
-
-  if (subcommand === "generate") {
-    return processImage({ api, event, prompt, type: "generate" });
-  } else if (subcommand === "edit") {
-    if (!attachments.length) {
-      return api.sendMessage("❌ Please attach an image to edit.", event.threadID);
-    }
-
-    const mainImageUrl = attachments[0].url;
-    const maskUrl = attachments.length > 1 ? attachments[1].url : null;
-
-    return processImage({ api, event, prompt, type: "edit", mainImageUrl, maskUrl });
-  } else {
-    return api.sendMessage(
-      `📌 Usage:\n- image generate <prompt>\n- image edit <prompt> (attach image, optional mask)`,
-      event.threadID
-    );
-  }
 };
