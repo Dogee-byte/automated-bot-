@@ -10,7 +10,7 @@ module.exports.config = {
   usage: "[generate <prompt>] | [edit <prompt> (with image)]",
 };
 
-module.exports.onStart = async function ({ message, args }) {
+module.exports.run = async function ({ message, args }) {
   const subcommand = args[0];
   const prompt = args.slice(1).join(" ") || "A beautiful painting";
 
