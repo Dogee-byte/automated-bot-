@@ -1,63 +1,86 @@
-const axios = require("axios");
 const fs = require("fs");
-const path = require("path");
+const fetch = require("node-fetch");
+const FormData = require("form-data");
 
 module.exports.config = {
-    name: "image",
-    aliases: [],
-    version: "1.1",
-    author: "real owner (converted by ari)",
-    countDown: 0,
-    role: 0,
-    shortDescription: "Edit or generate an image using Gemini-Edit",
-    category: "𝗔𝗜",
-    guide: {
-        en: "{pn} <text> (reply to image optional)",
-    },
+  name: "image",
+  aliases: ["img", "edit"],
+  description: "Generate or edit images",
+  credit: "ARI (api by ari)",
+  usage: "[generate <prompt>] | [edit <prompt> (with image)]",
 };
 
-module.exports.run = async function ({ api, event, args }) {
-    const prompt = args.join(" ");
-    if (!prompt) return api.sendMessage("Please provide the text to edit or generate.", event.threadID, event.messageID);
+module.exports.onStart = async function ({ message, args }) {
+  const subcommand = args[0];
+  const prompt = args.slice(1).join(" ") || "A beautiful painting";
 
-    const apiurl = "https://gemini-edit-omega.vercel.app/edit";
-    api.setMessageReaction("⏳", event.messageID, () => {}, true);
+  if (subcommand === "generate" || subcommand === "gen") {
+    try {
+      const response = await fetch("https://imageeditor-api.onrender.com/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ prompt }),
+      });
+
+      const data = await response.json();
+      if (!data.file) return message.reply("❌ Failed to generate image.");
+
+      const imgStream = fs.createWriteStream("gen.png");
+      const fileRes = await fetch(data.preview);
+      fileRes.body.pipe(imgStream);
+
+      imgStream.on("finish", async () => {
+        await message.reply({
+          body: `✅ Generated image for:\n"${prompt}"`,
+          attachment: fs.createReadStream("gen.png"),
+        });
+      });
+    } catch (err) {
+      console.error(err);
+      return message.reply("⚠️ Error while generating image.");
+    }
+  }
+
+  else if (subcommand === "edit") {
+    if (!message.attachments || message.attachments.length === 0) {
+      return message.reply("❌ Please attach an image to edit.");
+    }
 
     try {
-        let params = { prompt };
+      const imageUrl = message.attachments[0].url;
+      const imageBuffer = await (await fetch(imageUrl)).arrayBuffer();
 
-        if (event.messageReply && event.messageReply.attachments && event.messageReply.attachments[0]) {
-            params.imgurl = event.messageReply.attachments[0].url;
-        }
+      const form = new FormData();
+      form.append("prompt", prompt);
+      form.append("image", Buffer.from(imageBuffer), { filename: "input.png" });
 
-        const res = await axios.get(apiurl, { params });
+      const response = await fetch("https://imageeditor-api.onrender.com/edit", {
+        method: "POST",
+        body: form,
+      });
 
-        if (!res.data || !res.data.images || !res.data.images[0]) {
-            api.setMessageReaction("❌", event.messageID, () => {}, true);
-            return api.sendMessage("❌ Failed to get image.", event.threadID, event.messageID);
-        }
+      const data = await response.json();
+      if (!data.file) return message.reply("❌ Failed to edit image.");
 
-        const base64Image = res.data.images[0].replace(/^data:image\/\w+;base64,/, "");
-        const imageBuffer = Buffer.from(base64Image, "base64");
+      const imgStream = fs.createWriteStream("edit.png");
+      const fileRes = await fetch(data.preview);
+      fileRes.body.pipe(imgStream);
 
-        const cacheDir = path.join(__dirname, "cache");
-        if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
-
-        const imagePath = path.join(cacheDir, `${Date.now()}.png`);
-        fs.writeFileSync(imagePath, imageBuffer);
-
-        api.setMessageReaction("✅", event.messageID, () => {}, true);
-
-        api.sendMessage(
-            { attachment: fs.createReadStream(imagePath) },
-            event.threadID,
-            () => fs.unlinkSync(imagePath),
-            event.messageID
-        );
-
-    } catch (error) {
-        console.error("❌ API ERROR:", error.response?.data || error.message);
-        api.setMessageReaction("❌", event.messageID, () => {}, true);
-        return api.sendMessage("Error generating/editing image.", event.threadID, event.messageID);
+      imgStream.on("finish", async () => {
+        await message.reply({
+          body: `✏️ Edited image with:\n"${prompt}"`,
+          attachment: fs.createReadStream("edit.png"),
+        });
+      });
+    } catch (err) {
+      console.error(err);
+      return message.reply("⚠️ Error while editing image.");
     }
+  }
+
+  else {
+    return message.reply(
+      `📌 Usage:\n- image generate <prompt>\n- image edit <prompt> (with attached image)`
+    );
+  }
 };
