@@ -23,7 +23,6 @@ module.exports.run = async function ({ api, event, args }) {
     try {
         let params = { prompt };
 
-        // Check if reply has image
         if (event.messageReply && event.messageReply.attachments && event.messageReply.attachments[0]) {
             params.imgurl = event.messageReply.attachments[0].url;
         }
