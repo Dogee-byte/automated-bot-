@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-const axios = require("axios");
+const fetch = require("node-fetch");
 const FormData = require("form-data");
 const os = require("os");
 
@@ -17,82 +17,70 @@ function getTempFileName(prefix = "img") {
 }
 
 async function fetchImageToFile(url, tempFile) {
-  const res = await axios.get(url, { responseType: "stream" });
-  const writer = fs.createWriteStream(tempFile);
-  res.data.pipe(writer);
-  await new Promise((resolve, reject) => {
-    writer.on("finish", resolve);
-    writer.on("error", reject);
-  });
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to fetch image: ${res.status}`);
+  const buffer = Buffer.from(await res.arrayBuffer());
+  await fs.promises.writeFile(tempFile, buffer);
 }
 
 async function processImage({ api, event, prompt, type, mainImageUrl = null, maskUrl = null }) {
-  let progressMessageID;
-
   try {
-    progressMessageID = await api.sendMessage(
-      type === "generate" ? "⏳ Generating image..." : "⏳ Editing image...",
-      event.threadID
-    );
-
     let data;
 
     if (type === "generate") {
-      const response = await axios.post(
-        "https://imageeditor-api.onrender.com/generate",
-        { prompt },
-        { headers: { "Content-Type": "application/json" } }
-      );
-      data = response.data;
+      const response = await fetch("https://imageeditor-api.onrender.com/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
+
+      data = await response.json();
       if (!data.file || !data.preview) throw new Error("Failed to generate image.");
-    } else if (type === "edit") {
+    } 
+    else if (type === "edit") {
       if (!mainImageUrl) throw new Error("No main image URL provided.");
 
       const form = new FormData();
       form.append("prompt", prompt);
 
-      const mainBuffer = (await axios.get(mainImageUrl, { responseType: "arraybuffer" })).data;
-      form.append("image", Buffer.from(mainBuffer), { filename: "input.png" });
+      const mainBuffer = Buffer.from(await (await fetch(mainImageUrl)).arrayBuffer());
+      form.append("image", mainBuffer, { filename: "input.png" });
 
       if (maskUrl) {
-        const maskBuffer = (await axios.get(maskUrl, { responseType: "arraybuffer" })).data;
-        form.append("mask", Buffer.from(maskBuffer), { filename: "mask.png" });
+        const maskBuffer = Buffer.from(await (await fetch(maskUrl)).arrayBuffer());
+        form.append("mask", maskBuffer, { filename: "mask.png" });
       }
 
-      const response = await axios.post("https://imageeditor-api.onrender.com/edit", form, {
-        headers: form.getHeaders(),
+      const response = await fetch("https://imageeditor-api.onrender.com/edit", {
+        method: "POST",
+        body: form,
+        headers: form.getHeaders(), 
       });
-      data = response.data;
+
+      data = await response.json();
       if (!data.file || !data.preview) throw new Error("Failed to edit image.");
     }
 
     const tempFile = getTempFileName(type === "generate" ? "gen" : "edit");
     await fetchImageToFile(data.preview, tempFile);
 
-    await api.editMessage(
-      progressMessageID.messageID,
+    await api.sendMessage(
       {
-        body:
-          type === "generate"
-            ? `✅ Generated image for:\n"${prompt}"`
-            : `✏️ Edited image with:\n"${prompt}"`,
+        body: type === "generate"
+          ? `✅ Generated image for:\n"${prompt}"`
+          : `✏️ Edited image with:\n"${prompt}"`,
         attachment: fs.createReadStream(tempFile),
-      }
+      },
+      event.threadID
     );
 
     fs.unlink(tempFile, () => {});
   } catch (err) {
     console.error(err);
-    if (progressMessageID) {
-      await api.editMessage(progressMessageID.messageID, {
-        body: `⚠️ Error while ${type === "generate" ? "generating" : "editing"} image: ${err.message}`,
-      });
-    } else {
-      await api.sendMessage(
-        `⚠️ Error while ${type === "generate" ? "generating" : "editing"} image: ${err.message}`,
-        event.threadID
-      );
-    }
+    await api.sendMessage(
+      `⚠️ Error while ${type === "generate" ? "generating" : "editing"} image: ${err.message}`,
+      event.threadID
+    );
   }
 }
 
@@ -107,23 +95,27 @@ module.exports.run = async function ({ api, event, args }) {
   }
 
   const promptStartIndex = ["generate", "gen", "edit"].includes(args[0]?.toLowerCase()) ? 1 : 0;
-  const prompt = args.slice(promptStartIndex).join(" ") || "A beautiful painting";
+  const prompt = args.slice(promptStartIndex).join(" ").trim();
+
+  if (!prompt) {
+    return api.sendMessage(
+      "❌ Please provide a prompt for generating or editing an image.\n📌 Usage:\n- image generate <prompt>\n- image edit <prompt> (attach image, optional mask)",
+      event.threadID
+    );
+  }
 
   if (subcommand === "generate") {
     return processImage({ api, event, prompt, type: "generate" });
-  }
-
-  else if (subcommand === "edit") {
+  } else if (subcommand === "edit") {
     if (!attachments.length) {
       return api.sendMessage("❌ Please attach an image to edit.", event.threadID);
     }
+
     const mainImageUrl = attachments[0].url;
     const maskUrl = attachments.length > 1 ? attachments[1].url : null;
 
     return processImage({ api, event, prompt, type: "edit", mainImageUrl, maskUrl });
-  }
-
-  else {
+  } else {
     return api.sendMessage(
       `📌 Usage:\n- image generate <prompt>\n- image edit <prompt> (attach image, optional mask)`,
       event.threadID
