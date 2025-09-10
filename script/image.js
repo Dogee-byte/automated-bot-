@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-const fetch = require("node-fetch");
+const axios = require("axios");
 const FormData = require("form-data");
 const os = require("os");
 
@@ -17,9 +17,8 @@ function getTempFileName(prefix = "img") {
 }
 
 async function fetchImageToFile(url, tempFile) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Failed to fetch image: ${res.status}`);
-  const buffer = Buffer.from(await res.arrayBuffer());
+  const res = await axios.get(url, { responseType: "arraybuffer" });
+  const buffer = Buffer.from(res.data);
   await fs.promises.writeFile(tempFile, buffer);
 }
 
@@ -28,13 +27,8 @@ async function processImage({ api, event, prompt, type, mainImageUrl = null, mas
     let data;
 
     if (type === "generate") {
-      const response = await fetch("https://imageeditor-api.onrender.com/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
-      });
-
-      data = await response.json();
+      const response = await axios.post("https://imageeditor-api.onrender.com/generate", { prompt });
+      data = response.data;
       if (!data.file || !data.preview) throw new Error("Failed to generate image.");
     } 
     else if (type === "edit") {
@@ -43,21 +37,19 @@ async function processImage({ api, event, prompt, type, mainImageUrl = null, mas
       const form = new FormData();
       form.append("prompt", prompt);
 
-      const mainBuffer = Buffer.from(await (await fetch(mainImageUrl)).arrayBuffer());
+      const mainBuffer = (await axios.get(mainImageUrl, { responseType: "arraybuffer" })).data;
       form.append("image", mainBuffer, { filename: "input.png" });
 
       if (maskUrl) {
-        const maskBuffer = Buffer.from(await (await fetch(maskUrl)).arrayBuffer());
+        const maskBuffer = (await axios.get(maskUrl, { responseType: "arraybuffer" })).data;
         form.append("mask", maskBuffer, { filename: "mask.png" });
       }
 
-      const response = await fetch("https://imageeditor-api.onrender.com/edit", {
-        method: "POST",
-        body: form,
-        headers: form.getHeaders(), 
+      const response = await axios.post("https://imageeditor-api.onrender.com/edit", form, {
+        headers: form.getHeaders(),
       });
 
-      data = await response.json();
+      data = response.data;
       if (!data.file || !data.preview) throw new Error("Failed to edit image.");
     }
 
