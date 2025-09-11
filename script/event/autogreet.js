@@ -1,5 +1,21 @@
 const cron = require("node-cron");
 
+try {
+  const utils = require("ws3-fca/src/utils");
+  if (typeof utils.CustomError !== "function") {
+    class CustomError extends Error {
+      constructor(message) {
+        super(message);
+        this.name = "CustomError";
+      }
+    }
+    utils.CustomError = CustomError;
+    console.log("✅ Patched ws3-fca CustomError");
+  }
+} catch (e) {
+  console.warn("⚠️ Could not patch ws3-fca CustomError:", e.message);
+}
+
 const greetings = {
   morning: [
     { time: "7:35 AM", message: "Good morning! ☀️ How about starting the day with a delicious breakfast?" },
