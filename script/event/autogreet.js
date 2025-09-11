@@ -1,7 +1,12 @@
 const cron = require("node-cron");
 
+let utils;
 try {
-  const utils = require("ws3-fca/src/utils");
+  try {
+    utils = require("ws3-fca/utils");     
+  } catch {
+    utils = require("ws3-fca/src/utils");  
+  }
   if (typeof utils.CustomError !== "function") {
     class CustomError extends Error {
       constructor(message) {
