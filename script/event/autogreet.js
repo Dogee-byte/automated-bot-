@@ -38,31 +38,35 @@ module.exports.config = {
 
 let initialized = false;
 
-module.exports.handleEvent = async function ({ api }) {
+module.exports.handleEvent = async function ({ api, event }) {
   if (initialized) return;
   initialized = true;
 
   console.log("✅ AutoGreet cron jobs initialized");
 
-  cron.schedule("35 7 * * *", () => sendRandomGreeting(api, greetings.morning), { timezone: "Asia/Manila" });
-  cron.schedule("30 8 * * *", () => sendRandomGreeting(api, greetings.morning), { timezone: "Asia/Manila" });
-  cron.schedule("0 9 * * *", () => sendRandomGreeting(api, greetings.morning), { timezone: "Asia/Manila" });
+  const scheduleGreeting = (cronTime, greetingArray) => {
+    cron.schedule(cronTime, () => sendRandomGreeting(api, greetingArray), { timezone: "Asia/Manila" });
+  };
 
-  cron.schedule("0 12 * * *", () => sendRandomGreeting(api, greetings.lunchtime), { timezone: "Asia/Manila" });
-  cron.schedule("30 12 * * *", () => sendRandomGreeting(api, greetings.lunchtime), { timezone: "Asia/Manila" });
-  cron.schedule("0 13 * * *", () => sendRandomGreeting(api, greetings.lunchtime), { timezone: "Asia/Manila" });
+  scheduleGreeting("35 7 * * *", greetings.morning);
+  scheduleGreeting("30 8 * * *", greetings.morning);
+  scheduleGreeting("0 9 * * *", greetings.morning);
 
-  cron.schedule("0 15 * * *", () => sendRandomGreeting(api, greetings.afternoonSnack), { timezone: "Asia/Manila" });
-  cron.schedule("30 15 * * *", () => sendRandomGreeting(api, greetings.afternoonSnack), { timezone: "Asia/Manila" });
-  cron.schedule("0 16 * * *", () => sendRandomGreeting(api, greetings.afternoonSnack), { timezone: "Asia/Manila" });
+  scheduleGreeting("0 12 * * *", greetings.lunchtime);
+  scheduleGreeting("30 12 * * *", greetings.lunchtime);
+  scheduleGreeting("0 13 * * *", greetings.lunchtime);
 
-  cron.schedule("0 18 * * *", () => sendRandomGreeting(api, greetings.eveningDinner), { timezone: "Asia/Manila" });
-  cron.schedule("0 19 * * *", () => sendRandomGreeting(api, greetings.eveningDinner), { timezone: "Asia/Manila" });
-  cron.schedule("36 19 * * *", () => sendRandomGreeting(api, greetings.eveningDinner), { timezone: "Asia/Manila" });
+  scheduleGreeting("0 15 * * *", greetings.afternoonSnack);
+  scheduleGreeting("30 15 * * *", greetings.afternoonSnack);
+  scheduleGreeting("0 16 * * *", greetings.afternoonSnack);
 
-  cron.schedule("0 23 * * *", () => sendRandomGreeting(api, greetings.lateNightSnack), { timezone: "Asia/Manila" });
-  cron.schedule("30 23 * * *", () => sendRandomGreeting(api, greetings.lateNightSnack), { timezone: "Asia/Manila" });
-  cron.schedule("0 0 * * *", () => sendRandomGreeting(api, greetings.lateNightSnack), { timezone: "Asia/Manila" });
+  scheduleGreeting("0 18 * * *", greetings.eveningDinner);
+  scheduleGreeting("0 19 * * *", greetings.eveningDinner);
+  scheduleGreeting("36 19 * * *", greetings.eveningDinner);
+
+  scheduleGreeting("0 23 * * *", greetings.lateNightSnack);
+  scheduleGreeting("30 23 * * *", greetings.lateNightSnack);
+  scheduleGreeting("0 0 * * *", greetings.lateNightSnack);
 };
 
 async function sendRandomGreeting(api, greetingArray) {
@@ -89,6 +93,7 @@ async function sendRandomGreeting(api, greetingArray) {
         console.error(`❌ Failed to send in ${thread.threadID}:`, err.message);
       }
     }
+
     console.log(`✅ Sent greeting to ${groupThreads.length} groups: [${time}] ${message}`);
   } catch (err) {
     console.error("❌ Error fetching/sending greetings:", err);
