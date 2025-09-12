@@ -1,5 +1,6 @@
 const cron = require("node-cron");
 
+// Patch ws3-fca CustomError if needed
 let utils;
 try {
   try {
@@ -21,6 +22,7 @@ try {
   console.warn("⚠️ Could not patch ws3-fca CustomError:", e.message);
 }
 
+// === Greetings setup ===
 const greetings = {
   morning: [
     { time: "7:35 AM", message: "Good morning! ☀️ How about starting the day with a delicious breakfast?" },
@@ -49,19 +51,21 @@ const greetings = {
   ],
 };
 
+// === Module config ===
 module.exports.config = {
   name: "autogreet",
   version: "2.0",
   credits: "Ari",
-  description: "Automatic greetings",
+  description: "Automatic greetings + autobot",
   category: "events"
 };
 
-let initialized = false;
+// === Cron initialization ===
+let cronInitialized = false;
 
-module.exports.handleEvent = async function ({ api, event }) {
-  if (initialized) return;
-  initialized = true;
+module.exports.init = function(api) {
+  if (cronInitialized) return;
+  cronInitialized = true;
 
   console.log("✅ AutoGreet cron jobs initialized");
 
@@ -69,27 +73,33 @@ module.exports.handleEvent = async function ({ api, event }) {
     cron.schedule(cronTime, () => sendRandomGreeting(api, greetingArray), { timezone: "Asia/Manila" });
   };
 
+  // Morning
   scheduleGreeting("35 7 * * *", greetings.morning);
   scheduleGreeting("30 8 * * *", greetings.morning);
   scheduleGreeting("0 9 * * *", greetings.morning);
 
+  // Lunchtime
   scheduleGreeting("0 12 * * *", greetings.lunchtime);
   scheduleGreeting("30 12 * * *", greetings.lunchtime);
   scheduleGreeting("0 13 * * *", greetings.lunchtime);
 
+  // Afternoon Snack
   scheduleGreeting("0 15 * * *", greetings.afternoonSnack);
   scheduleGreeting("30 15 * * *", greetings.afternoonSnack);
   scheduleGreeting("0 16 * * *", greetings.afternoonSnack);
 
+  // Evening Dinner
   scheduleGreeting("0 18 * * *", greetings.eveningDinner);
   scheduleGreeting("0 19 * * *", greetings.eveningDinner);
   scheduleGreeting("36 19 * * *", greetings.eveningDinner);
 
+  // Late Night Snack
   scheduleGreeting("0 23 * * *", greetings.lateNightSnack);
   scheduleGreeting("30 23 * * *", greetings.lateNightSnack);
   scheduleGreeting("0 0 * * *", greetings.lateNightSnack);
 };
 
+// === Send greeting helper ===
 async function sendRandomGreeting(api, greetingArray) {
   const randomIndex = Math.floor(Math.random() * greetingArray.length);
   const { time, message } = greetingArray[randomIndex];
@@ -120,3 +130,9 @@ async function sendRandomGreeting(api, greetingArray) {
     console.error("❌ Error fetching/sending greetings:", err);
   }
 }
+
+// === Keep handleEvent for autobot ===
+module.exports.handleEvent = async function({ api, event }) {
+  // Your normal autobot logic here
+  // For example: commands, reactions, etc.
+};
