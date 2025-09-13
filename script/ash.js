@@ -100,7 +100,7 @@ module.exports.handleEvent = async function ({ api, event }) {
       memory[userId] = memory[userId].slice(-10);
     }
 
-    const res = await axios.post("https://ashley-api.onrender.com/chat", {
+    const res = await axios.post("https://ashley-api-olxy.onrender.com/chat", {
       character: "Ashley",
       message: event.body,
       user: userId
