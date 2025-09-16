@@ -15,6 +15,22 @@ const Utils = new Object({
   account: new Map(),
   cooldowns: new Map(),
 });
+
+console.log(`
++--------------------------------------------------+
+|                                         |
+|    █████╗ ██████╗ ██╗                |
+|   ██╔══██╗██╔══██╗██║                |
+|   ███████║██████╔╝██║                |
+|   ██╔══██║██╔══██╗██║                |
+|   ██║  ██║██║  ██║██║                 |
+|   ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝                 |
+|                                          |
+|             A R I                        |
+|                                          |
++--------------------------------------------------+
+`);
+
 fs.readdirSync(script).forEach((file) => {
   const scripts = path.join(script, file);
   const stats = fs.statSync(scripts);
