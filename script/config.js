@@ -1,49 +1,25 @@
+const fs = require("fs");
+
 module.exports.config = {
   name: "config",
-  version: "1.1.0",
-  permission: 3,
-  prefix: false,
-  premium: false,
-  credits: "ARI",
-  description: "config bot",
-  category: "operator",
-  cooldowns: 5
+  version: "1.0.0",
+  hasPermssion: 0,
+  credits: "fixed by ari",
+  description: "Facebook config menu",
+  commandCategory: "system",
+  usages: "[config]",
+  cooldowns: 5,
 };
 
-module.exports.languages = {
-  "bangla": {},
-  "english": {}
-};
-
-const axios = require("axios");
-const fs = require("fs-extra");
-
-// FB headers
-const cookie = process.env['configAppstate'];
-const headers = {
-  "Host": "mbasic.facebook.com",
-  "user-agent": "Mozilla/5.0 (Linux; Android 11; M2101K7BG Build/RP1A.200720.011;) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/97.0.4692.98 Mobile Safari/537.36",
-  "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
-  "referer": "https://mbasic.facebook.com/?refsrc=deprecated&_rdr",
-  "accept-encoding": "gzip, deflate",
-  "accept-language": "en-US,en;q=0.9",
-  "Cookie": cookie
-};
-
-// helper extract postID from link
 function extractPostID(link) {
   let match = link.match(/(?:story_fbid=|fbid=|\/posts\/|\/permalink\/)(\d+)/);
-  return match ? match[1] : link; // kung wala, gamitin kung ano nilagay
+  return match ? match[1] : null;
 }
 
-// main entry
-module.exports.run = async function ({ api, event }) {
-  const { threadID, messageID, senderID } = event;
+module.exports.run = async function({ api, event }) {
+  const { threadID, senderID } = event;
 
-  const reply = msg => api.sendMessage(msg, threadID, messageID);
-
-  return reply(
-`⚙️ Config Menu
+  const menu = `⚙️ Config Menu
 
 👤 Profile
 1. Change Bio
@@ -75,221 +51,257 @@ module.exports.run = async function ({ api, event }) {
 🚪 System
 20. Logout
 
-➡️ Use: reply with a number`
-  );
+➡️ Use: reply with a number`;
+
+  api.sendMessage(menu, threadID, (err, info) => {
+    if (err) return console.error(err);
+    global.client.handleReply.push({
+      name: this.config.name,
+      messageID: info.messageID,
+      author: senderID,
+      type: "menu"
+    });
+  });
 };
 
-module.exports.handleReply = async function ({ api, event, handleReply }) {
-  const { threadID, messageID, senderID, body, attachments } = event;
-  if (!body) return;
-  const text = body.trim();
+module.exports.handleReply = async function({ api, event, handleReply }) {
+  const { threadID, senderID, body } = event;
 
-  const reply = (msg, cb) => {
-    if (cb) api.sendMessage(msg, threadID, cb, messageID);
-    else api.sendMessage(msg, threadID, messageID);
-  };
-  
-  if (handleReply.type === "menu") {
-    switch (text) {
-      case "1": return reply("✏️ Enter new bio:", () => setNext("bio"));
-      case "2": return reply("✏️ Enter new nickname:", () => setNext("nickname"));
-      case "3": return reply("📸 Send new avatar image:", () => setNext("avatar"));
-      case "4": return reply("🛡️ Type 'on' or 'off' to toggle shield:", () => setNext("shield"));
-      case "5": return reply("📥 Fetching pending messages...", () => setNext("pending"));
-      case "6": return reply("📥 Fetching unread messages...", () => setNext("unread"));
-      case "7": return reply("⚠️ Enter spam text:", () => setNext("spam"));
-      case "8": return reply("✉️ Enter userID + message:", () => setNext("sendmsg"));
-      case "9": return reply("📝 Enter post content:", () => setNext("post"));
-      case "10": return reply("❌ Enter post link to delete:", () => setNext("deletepost"));
-      case "11": return reply("💬 Enter post link + comment:", () => setNext("comment"));
-      case "12": return reply("❤️ Enter post link:", () => setNext("react_id"));
-      case "13": return reply("📝 Enter note content:", () => setNext("note"));
-      case "14": return reply("👤 Enter user ID to add friend:", () => setNext("addfriend"));
-      case "15": return reply("👤 Enter user ID to accept request:", () => setNext("acceptfriend"));
-      case "16": return reply("👤 Enter user ID to decline request:", () => setNext("declinefriend"));
-      case "17": return reply("👤 Enter user ID to unfriend:", () => setNext("unfriend"));
-      case "18": return reply("🚫 Enter user ID to block:", () => setNext("block"));
-      case "19": return reply("✅ Enter user ID to unblock:", () => setNext("unblock"));
-      case "20": return reply("🚪 Logging out...", () => setNext("logout"));
-      default: return reply("❌ Invalid choice.");
-    }
-  }
+  if (handleReply.author != senderID) return;
 
-  if (handleReply.type === "bio") {
-    try {
-      await axios.post("https://mbasic.facebook.com/profile/bio/edit", { bio: text }, { headers });
-      reply("✅ Bio updated!");
-    } catch { reply("❌ Failed to update bio."); }
-  }
+  switch (handleReply.type) {
+    case "menu": {
+      switch (body) {
+        case "1":
+          api.sendMessage("✏️ Enter new bio:", threadID, (e, info) =>
+            global.client.handleReply.push({ name: this.config.name, messageID: info.messageID, author: senderID, type: "bio" })
+          );
+          break;
+        case "2":
+          api.sendMessage("✏️ Enter new nickname:", threadID, (e, info) =>
+            global.client.handleReply.push({ name: this.config.name, messageID: info.messageID, author: senderID, type: "nickname" })
+          );
+          break;
+        case "3":
+          api.sendMessage("📷 Send new avatar image:", threadID, (e, info) =>
+            global.client.handleReply.push({ name: this.config.name, messageID: info.messageID, author: senderID, type: "avatar" })
+          );
+          break;
+        case "4":
+          api.sendMessage("🔒 Toggle avatar shield (on/off):", threadID, (e, info) =>
+            global.client.handleReply.push({ name: this.config.name, messageID: info.messageID, author: senderID, type: "avatar_shield" })
+          );
+          break;
 
-  if (handleReply.type === "nickname") {
-    try {
-      await axios.post("https://mbasic.facebook.com/nickname/change", { nickname: text }, { headers });
-      reply("✅ Nickname updated!");
-    } catch { reply("❌ Failed to update nickname."); }
-  }
+        // MESSAGING
+        case "5":
+          api.sendMessage("📥 Showing pending messages...", threadID);
+          break;
+        case "6":
+          api.sendMessage("📨 Showing unread messages...", threadID);
+          break;
+        case "7":
+          api.sendMessage("🚫 Showing spam messages...", threadID);
+          break;
+        case "8":
+          api.sendMessage("✉️ Enter userID + message:", threadID, (e, info) =>
+            global.client.handleReply.push({ name: this.config.name, messageID: info.messageID, author: senderID, type: "send_msg" })
+          );
+          break;
 
-  if (handleReply.type === "avatar") {
-    if (attachments.length > 0) {
-      let img = attachments[0].url;
-      try {
-        await axios.post("https://mbasic.facebook.com/profile/picture/upload", { url: img }, { headers });
-        reply("✅ Avatar changed!");
-      } catch { reply("❌ Failed to change avatar."); }
-    } else reply("❌ Please attach an image.");
-  }
+        // POSTS
+        case "9":
+          api.sendMessage("📝 Enter post content:", threadID, (e, info) =>
+            global.client.handleReply.push({ name: this.config.name, messageID: info.messageID, author: senderID, type: "create_post" })
+          );
+          break;
+        case "10":
+          api.sendMessage("❌ Enter post link to delete:", threadID, (e, info) =>
+            global.client.handleReply.push({ name: this.config.name, messageID: info.messageID, author: senderID, type: "delete_post" })
+          );
+          break;
+        case "11":
+          api.sendMessage("💬 Enter post link + comment:", threadID, (e, info) =>
+            global.client.handleReply.push({ name: this.config.name, messageID: info.messageID, author: senderID, type: "comment_post" })
+          );
+          break;
+        case "12":
+          api.sendMessage("❤️ Enter post link:", threadID, (e, info) =>
+            global.client.handleReply.push({ name: this.config.name, messageID: info.messageID, author: senderID, type: "react_post" })
+          );
+          break;
+        case "13":
+          api.sendMessage("📝 Enter note content:", threadID, (e, info) =>
+            global.client.handleReply.push({ name: this.config.name, messageID: info.messageID, author: senderID, type: "note" })
+          );
+          break;
 
-  if (handleReply.type === "shield") {
-    try {
-      await axios.post("https://mbasic.facebook.com/profile/shield/toggle", { enable: text === "on" }, { headers });
-      reply(`🛡️ Avatar shield ${text === "on" ? "enabled" : "disabled"}!`);
-    } catch { reply("❌ Failed to toggle shield."); }
-  }
+        // FRIENDS
+        case "14":
+          api.sendMessage("👤 Enter userID to add friend:", threadID, (e, info) =>
+            global.client.handleReply.push({ name: this.config.name, messageID: info.messageID, author: senderID, type: "add_friend" })
+          );
+          break;
+        case "15":
+          api.sendMessage("✅ Enter userID to accept friend request:", threadID, (e, info) =>
+            global.client.handleReply.push({ name: this.config.name, messageID: info.messageID, author: senderID, type: "accept_friend" })
+          );
+          break;
+        case "16":
+          api.sendMessage("❌ Enter userID to decline friend request:", threadID, (e, info) =>
+            global.client.handleReply.push({ name: this.config.name, messageID: info.messageID, author: senderID, type: "decline_friend" })
+          );
+          break;
+        case "17":
+          api.sendMessage("🚫 Enter userID to unfriend:", threadID, (e, info) =>
+            global.client.handleReply.push({ name: this.config.name, messageID: info.messageID, author: senderID, type: "unfriend" })
+          );
+          break;
+        case "18":
+          api.sendMessage("⛔ Enter userID to block:", threadID, (e, info) =>
+            global.client.handleReply.push({ name: this.config.name, messageID: info.messageID, author: senderID, type: "block" })
+          );
+          break;
+        case "19":
+          api.sendMessage("✅ Enter userID to unblock:", threadID, (e, info) =>
+            global.client.handleReply.push({ name: this.config.name, messageID: info.messageID, author: senderID, type: "unblock" })
+          );
+          break;
 
-  if (handleReply.type === "pending") {
-    try {
-      let res = await axios.get("https://mbasic.facebook.com/messages/?folder=pending", { headers });
-      reply("📥 Pending messages:\n" + res.data.slice(0, 200));
-    } catch { reply("❌ Failed to fetch pending."); }
-  }
+        // SYSTEM
+        case "20":
+          api.sendMessage("🚪 Logging out...", threadID);
+          break;
 
-  if (handleReply.type === "unread") {
-    try {
-      let res = await axios.get("https://mbasic.facebook.com/messages/?folder=unread", { headers });
-      reply("📥 Unread messages:\n" + res.data.slice(0, 200));
-    } catch { reply("❌ Failed to fetch unread."); }
-  }
-
-  if (handleReply.type === "spam") {
-    try {
-      for (let i = 0; i < 5; i++) {
-        await axios.post("https://mbasic.facebook.com/messages/send", { text }, { headers });
+        default:
+          api.sendMessage("❌ Invalid option.", threadID);
       }
-      reply("✅ Spam sent!");
-    } catch { reply("❌ Failed to spam."); }
-  }
+      break;
+    }
 
-  if (handleReply.type === "sendmsg") {
-    let [uid, ...msg] = text.split(" ");
-    try {
-      await axios.post(`https://mbasic.facebook.com/messages/send/?id=${uid}`, { text: msg.join(" ") }, { headers });
-      reply("✅ Message sent.");
-    } catch { reply("❌ Failed to send message."); }
-  }
+    // ---------------- PROFILE ----------------
+    case "bio":
+      api.changeBio(body, () =>
+        api.sendMessage(`✅ Bio updated to: ${body}`, threadID)
+      );
+      break;
 
-  if (handleReply.type === "post") {
-    try {
-      await axios.post("https://mbasic.facebook.com/composer/mbasic/", { text }, { headers });
-      reply("✅ Post created!");
-    } catch { reply("❌ Failed to post."); }
-  }
+    case "nickname":
+      api.changeNickname(body, threadID, senderID, () =>
+        api.sendMessage(`✅ Nickname changed to: ${body}`, threadID)
+      );
+      break;
 
-  if (handleReply.type === "deletepost") {
-    let id = extractPostID(text);
-    try {
-      await axios.post(`https://mbasic.facebook.com/${id}/delete`, {}, { headers });
-      reply("✅ Post deleted!");
-    } catch { reply("❌ Failed to delete."); }
-  }
+    case "avatar":
+      api.changeAvatar(event.attachments[0].url, () =>
+        api.sendMessage("✅ Avatar updated!", threadID)
+      );
+      break;
 
-  if (handleReply.type === "comment") {
-    let [link, ...msg] = text.split(" ");
-    let id = extractPostID(link);
-    try {
-      await axios.post(`https://mbasic.facebook.com/${id}/comment`, { text: msg.join(" ") }, { headers });
-      reply("💬 Commented!");
-    } catch { reply("❌ Failed to comment."); }
-  }
+    case "avatar_shield":
+      api.changeAvatarShield(body.toLowerCase() === "on", () =>
+        api.sendMessage(`✅ Avatar shield ${body.toLowerCase() === "on" ? "enabled" : "disabled"}`, threadID)
+      );
+      break;
 
-  if (handleReply.type === "react_id") {
-    let id = extractPostID(text);
-    reply(
-`Choose reaction:
-1. 👍
-2. ❤️
-3. 😆
-4. 😮
-5. 😢
-6. 😡`,
-      () => setNext("react_choose", id)
-    );
-  }
+    // ---------------- MESSAGING ----------------
+    case "send_msg": {
+      let [id, ...msg] = body.split(" ");
+      api.sendMessage(msg.join(" "), id, () =>
+        api.sendMessage(`✅ Message sent to ${id}`, threadID)
+      );
+      break;
+    }
 
-  if (handleReply.type === "react_choose") {
-    const id = handleReply.postID;
-    const reactions = ["LIKE", "LOVE", "HAHA", "WOW", "SORRY", "ANGER"];
-    const choice = parseInt(text);
-    if (choice >= 1 && choice <= 6) {
-      try {
-        await axios.post(`https://mbasic.facebook.com/reactions/picker/?ft_id=${id}`, { reaction: reactions[choice - 1] }, { headers });
-        reply(`✅ Reacted with ${reactions[choice - 1]}!`);
-      } catch { reply("❌ Failed to react."); }
-    } else reply("❌ Invalid reaction.");
-  }
+    // ---------------- POSTS ----------------
+    case "create_post":
+      api.createPost(body, () =>
+        api.sendMessage("✅ Post created!", threadID)
+      );
+      break;
 
-  if (handleReply.type === "note") {
-    try {
-      await axios.post("https://mbasic.facebook.com/notes/create", { text }, { headers });
-      reply("✅ Note created!");
-    } catch { reply("❌ Failed to create note."); }
-  }
+    case "delete_post": {
+      let postID = extractPostID(body);
+      if (!postID) return api.sendMessage("❌ Invalid post link.", threadID);
+      api.deletePost(postID, () =>
+        api.sendMessage("✅ Post deleted!", threadID)
+      );
+      break;
+    }
 
-  if (handleReply.type === "addfriend") {
-    try {
-      await axios.post(`https://mbasic.facebook.com/add_friend/action/?id=${text}`, {}, { headers });
-      reply("👤 Friend request sent.");
-    } catch { reply("❌ Failed to add friend."); }
-  }
+    case "comment_post": {
+      let parts = body.split(" ");
+      let link = parts.shift();
+      let comment = parts.join(" ");
+      let postID = extractPostID(link);
+      if (!postID) return api.sendMessage("❌ Invalid post link.", threadID);
+      api.commentPost(postID, comment, () =>
+        api.sendMessage("💬 Commented!", threadID)
+      );
+      break;
+    }
 
-  if (handleReply.type === "acceptfriend") {
-    try {
-      await axios.post(`https://mbasic.facebook.com/friends/accept/?id=${text}`, {}, { headers });
-      reply("✅ Friend accepted.");
-    } catch { reply("❌ Failed to accept."); }
-  }
+    case "react_post": {
+      let postID = extractPostID(body);
+      if (!postID) return api.sendMessage("❌ Invalid post link.", threadID);
+      api.sendMessage("Choose reaction:\n1. 👍\n2. ❤️\n3. 😆\n4. 😮\n5. 😢\n6. 😡", threadID, (e, info) =>
+        global.client.handleReply.push({ name: this.config.name, messageID: info.messageID, author: senderID, type: "react_choose", postID })
+      );
+      break;
+    }
 
-  if (handleReply.type === "declinefriend") {
-    try {
-      await axios.post(`https://mbasic.facebook.com/friends/decline/?id=${text}`, {}, { headers });
-      reply("❌ Friend declined.");
-    } catch { reply("❌ Failed to decline."); }
-  }
+    case "react_choose": {
+      let postID = handleReply.postID;
+      let reacts = ["👍", "❤️", "😆", "😮", "😢", "😡"];
+      let react = reacts[parseInt(body) - 1];
+      if (!react) return api.sendMessage("❌ Invalid choice.", threadID);
+      api.setPostReaction(react, postID, () =>
+        api.sendMessage(`✅ Reacted with ${react}`, threadID)
+      );
+      break;
+    }
 
-  if (handleReply.type === "unfriend") {
-    try {
-      await axios.post(`https://mbasic.facebook.com/removefriend.php?id=${text}`, {}, { headers });
-      reply("👤 Unfriended.");
-    } catch { reply("❌ Failed to unfriend."); }
-  }
+    case "note":
+      api.createNote(body, () =>
+        api.sendMessage("✅ Note created!", threadID)
+      );
+      break;
 
-  if (handleReply.type === "block") {
-    try {
-      await axios.post(`https://mbasic.facebook.com/privacy/block/add/${text}`, {}, { headers });
-      reply("🚫 User blocked.");
-    } catch { reply("❌ Failed to block."); }
-  }
+    // ---------------- FRIENDS ----------------
+    case "add_friend":
+      api.addFriend(body, () =>
+        api.sendMessage(`✅ Friend request sent to ${body}`, threadID)
+      );
+      break;
 
-  if (handleReply.type === "unblock") {
-    try {
-      await axios.post(`https://mbasic.facebook.com/privacy/block/remove/${text}`, {}, { headers });
-      reply("✅ User unblocked.");
-    } catch { reply("❌ Failed to unblock."); }
-  }
+    case "accept_friend":
+      api.acceptFriendRequest(body, () =>
+        api.sendMessage(`✅ Friend request from ${body} accepted`, threadID)
+      );
+      break;
 
-  if (handleReply.type === "logout") {
-    try {
-      await axios.get("https://mbasic.facebook.com/logout", { headers });
-      reply("🚪 Logged out.");
-    } catch { reply("❌ Failed to log out."); }
-  }
+    case "decline_friend":
+      api.declineFriendRequest(body, () =>
+        api.sendMessage(`❌ Friend request from ${body} declined`, threadID)
+      );
+      break;
 
-  function setNext(type, postID = null) {
-    global.client.handleReply.push({
-      name: module.exports.config.name,
-      messageID,
-      author: senderID,
-      type,
-      postID
-    });
+    case "unfriend":
+      api.removeFriend(body, () =>
+        api.sendMessage(`🚫 Unfriended ${body}`, threadID)
+      );
+      break;
+
+    case "block":
+      api.blockUser(body, () =>
+        api.sendMessage(`⛔ Blocked ${body}`, threadID)
+      );
+      break;
+
+    case "unblock":
+      api.unblockUser(body, () =>
+        api.sendMessage(`✅ Unblocked ${body}`, threadID)
+      );
+      break;
   }
 };
