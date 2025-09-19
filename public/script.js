@@ -1,4 +1,19 @@
-  document.getElementById('agreeCheckbox').addEventListener('change', function() {
+const backgroundm = document.querySelector(".play-background");
+    Swal.fire({
+      title: `<p style="font-size: 15px; margin-top: -15px; margin-bottom: -10px;">Ari autobot</p>`,
+      icon: "info",
+      html: `<p style="font-size: 8px;">This project is not for sale, you can use it for free.</p>`,
+      background: '#1e1e1e',
+      color: 'white',
+      confirmButtonColor: 'transparent',
+      confirmButtonText: `
+    <i class="fa fa-thumbs-up" style="color:white;"></i> Okay
+  `
+    }).then(() => {
+        backgroundm.play();
+    });
+
+document.getElementById('agreeCheckbox').addEventListener('change', function() {
   document.getElementById('submitButton').disabled = !this.checked;
 });
 let Commands = [{
@@ -248,18 +263,3 @@ function selectAllEvents() {
   });
 }
 commandList();
-
-const backgroundm = document.querySelector(".play-background");
-    Swal.fire({
-      title: `<p style="font-size: 15px; margin-top: -15px; margin-bottom: -10px;">Ari autobot</p>`,
-      icon: "info",
-      html: `<p style="font-size: 8px;">This project is not for sale, you can use it for free.</p>`,
-      background: '#1e1e1e',
-      color: 'white',
-      confirmButtonColor: 'transparent',
-      confirmButtonText: `
-    <i class="fa fa-thumbs-up" style="color:white;"></i> Okay
-  `
-    }).then(() => {
-        backgroundm.play();
-    });
