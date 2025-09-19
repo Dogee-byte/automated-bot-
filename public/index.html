@@ -1,37 +1,47 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
-    <title>Automated Bot</title>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" href="https://i.imgur.com/BNKq0fl.jpeg" type="image/jpeg" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="style.css" />
-  </head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title class="titleText">Messenger bot</title>
+    <link rel="icon" type="image/x-icon" href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTBZvtDbJ4A6SMgKU6DLkoLjxvFBgxOdTUe2Tfvdm-Nki57LbsA79_bDtg&s=10">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    </head>
   <body>
-    <div class="header">
-      <video width="360" height="300" autoplay muted loop>
-  <source src="https://files.catbox.moe/hk31hb.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-      </video>
-      <img src="https://i.imgur.com/Haz5yJT.jpeg" alt="Profile" class="profile-pic" />
+    <img id="background-pic" src="https://img1.picmix.com/output/stamp/normal/3/7/5/5/2195573_939df.gif">
+    <img id="icon-mainn" src="https://i.imgur.com/dleGZwW.jpeg">
+    <img id="active-status" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTQ1TS0JJp5ClJ5lTn-OBv9y461HneWyQco9lx5kVwT6d5i8KTm7-zer9ok&s=10"></img>
+    </img>
+    </img>
+    <audio class="play-background" autoplay loop>
+        <source src="ipagpatawadmo.mp3" type="audio/mpeg">
+    </audio>
+    <h1 class="name">Arı</h1>
+    <img class="verified-logo" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRE7wBhg3kHUcSznRYkGgDzBjGC9BmayaHhngd9iq-KZr24zqMmYSUgk1k1&s=10"></img>
+    </img>
+    <p class="bio"> Hey there! I'll warn you about using this project, your facebook account is possible to get locked, restricted or suspended due to logging in to unknown location, automated behavior etc. use a dummy account. </p>
+    <a class="follow-button" href="https://www.facebook.com/61577110900436">View profile</a>
+    <a class="page-button" href="https://myportfilo2023.netlify.app">View info</a>
+    <div class="menu-toggle">
+      <span class="bar"></span>
+      <span class="bar"></span>
+      <span class="bar"></span>
     </div>
-
-    <div class="profile-container">
-      <div class="profile-name">
-        AJ <i class="fas fa-check-circle verified-icon"></i>
-      </div>
-      
-      <p class="warning">
-        Just a reminder, using this bot can cause suspension, locked of your account so much better to use your dummy account. If there's a trouble about using this site just message me with no hesitation, thanks and enjoy!.
-      </p>
+    <img class="line-main" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHazg1aUtZ57F9hGXaXzzPGRuOHHMDbonhWj3b4GCNyrgxC2azDi920IX8&s=10"></img>
+    <div id="menu-container" class="menu-container">
+      <ul class="menu">
+        <h5>Menu Lists</h5>
+        <button class="menu-buttons" onclick="gotoCreate()">Create bot</button>
+        <button class="menu-buttons" onclick="gotoTutorial()">Tutorial</button>
+        <button class="menu-buttons" onclick="gotoOnlines()">Onlines</button>
+      </ul>
     </div>
-
- <div class="button-container">
-  <a href="https://www.facebook.com/61550264923277" target="_blank" class="btn">View profile</a>  
-</div>
-
     <div class="container">
       <h2 class="subtitle">Facebook Appstate</h2>
       <form id="json-form" onsubmit="submitForm(event)">
@@ -66,36 +76,41 @@
         <button class="btn submit-btn" onclick="State()" disabled id="submitButton">Submit</button>
       </div>
     </div>
-
-    <div id="audio-container" style="display:none;"></div>
-
-    <div id="result" class="container text-center" style="display: none;"></div>
-
-    <footer class="footer">
-      <p>Time: <span id="time"></span></p>
-      <p>Ping: <span id="ping"></span></p>
-    </footer>
-
+    <div class="onlines-container">
+      <div class="container">
+        <div class="row">
+          <h1 style="font-size: 10px;">Current Online</h1>
+        </div>
+        <div class="row" id="user_online"></div>
+      </div>
+    </div>
+    </div>
+    <div class="tutorial-container">
+      <div class="container">
+        <h5>STEP 1 : </h5>
+        <p class="cmddes">Go to play store and search for <a class="cmddes" style="color: blue;">Kiwi Browser</a> and download it </p>
+        <img id="tutorialimg" src="https://i.imgur.com/nGA8oLY.jpeg"></img>
+        <h5>STEP 2 : </h5>
+        <p class="cmddes">Download c3c fbstate exporter : <a class="cmddes" id="c3cdownload" style="color: blue;">click here</a> to download it </p>
+        <img id="tutorialimg" src="https://i.imgur.com/eYj6Sdt.jpeg"></img>
+        <h5>STEP 3 : </h5>
+        <p class="cmddes">Open <a class="cmddes" style="color: blue;">Kiwi Browser</a> and click the 3 dots </p>
+        <img id="tutorialimg" src="https://i.imgur.com/9JL92Hi.jpeg"></img>
+        <h5>STEP 4 : </h5>
+        <p class="cmddes">After clicking the 3 dots, find the Extension and click it after that click okay then click +(from .zip/.crx/.user.js) and select c3c-ufc-utility-1.5.zip in your download folder.</p>
+        <img id="tutorialimg" src="https://i.imgur.com/awuxfJq.jpeg"></img>
+        <h5>STEP 5 : </h5>
+        <p class="cmddes">after that proceed to facebook.com using Kiwi Browser and login your facebook account. make sure to use a dummy account, after that click the 3 dots again.</p>
+        <img id="tutorialimg" src="https://i.imgur.com/WvzpLp3.jpeg"></img>
+        <h5>STEP 6 : </h5>
+        <p class="cmddes">find C3C FBState Utility and click it, then click the Copy to Clipboard.</p>
+        <img id="tutorialimg" src="https://i.imgur.com/kVyOOOi.jpeg"></img>
+        <h5>LAST STEP : </h5>
+        <p class="cmddes">after copying the appstate, click the menu button and go to Create Bot then paste your appstate in Facebook Appstate and then fill up your bot details. congratulations your bot is now active! note : the bot is only working thru group chats. you can type <a class="cmddes" style="color: blue;">(prefix)help</a>
+        </p>
+        <img id="tutorialimg" src="https://i.imgur.com/YAEtSp5.jpeg"></img>
+      </div>
+    </div>
     <script src="script.js"></script>
-    <script>
-    let audioStarted = false;
-
-      document.addEventListener("click", function () {
-        if (!audioStarted) {
-          const iframe = document.createElement("iframe");
-          iframe.width = "1";
-          iframe.height = "1";
-          iframe.src = "https://www.youtube.com/embed/ApXoWvfEYVU?autoplay=1&controls=0&showinfo=0&modestbranding=1&rel=0&iv_load_policy=3";
-          iframe.frameBorder = "0";
-          iframe.allow = "autoplay; encrypted-media";
-          iframe.allowFullscreen = true;
-          iframe.style.opacity = "0";
-          iframe.style.position = "absolute";
-          iframe.style.left = "-9999px";
-          document.getElementById("audio-container").appendChild(iframe);
-          audioStarted = true;
-        }
-      });
-    </script>
   </body>
 </html>
