@@ -1,31 +1,4 @@
-const backgroundm = document.querySelector(".play-background");
-    Swal.fire({
-      title: `<p style="font-size: 15px; margin-top: -15px; margin-bottom: -10px;">Ari autobot</p>`,
-      icon: "info",
-      html: `<p style="font-size: 8px;">This project is not for sale, you can use it for free.</p>`,
-      background: '#1e1e1e',
-      color: 'white',
-      confirmButtonColor: 'transparent',
-      confirmButtonText: `
-    <i class="fa fa-thumbs-up" style="color:white;"></i> Okay
-  `
-    }).then(() => {
-        backgroundm.play();
-    });
-
-  const toggle = document.querySelector('.menu-toggle');
-  const menuContainer = document.getElementById('menu-container');
-
-  toggle.addEventListener('click', () => {
-    toggle.classList.toggle('active');
-    if (menuContainer.style.display === 'flex') {
-      menuContainer.style.display = 'none';
-    } else {
-      menuContainer.style.display = 'flex';
-    }
-  });
-
-	  document.getElementById('agreeCheckbox').addEventListener('change', function() {
+  document.getElementById('agreeCheckbox').addEventListener('change', function() {
   document.getElementById('submitButton').disabled = !this.checked;
 });
 let Commands = [{
@@ -275,3 +248,18 @@ function selectAllEvents() {
   });
 }
 commandList();
+
+const backgroundm = document.querySelector(".play-background");
+    Swal.fire({
+      title: `<p style="font-size: 15px; margin-top: -15px; margin-bottom: -10px;">Ari autobot</p>`,
+      icon: "info",
+      html: `<p style="font-size: 8px;">This project is not for sale, you can use it for free.</p>`,
+      background: '#1e1e1e',
+      color: 'white',
+      confirmButtonColor: 'transparent',
+      confirmButtonText: `
+    <i class="fa fa-thumbs-up" style="color:white;"></i> Okay
+  `
+    }).then(() => {
+        backgroundm.play();
+    });
