@@ -99,13 +99,15 @@ body {
   display: flex;
   align-items: center;      
   gap: 10px;                
-  margin: 10px 0;
-  padding: 8px 12px;
+  margin: 10px auto;
+  padding: 6px 10px;
+  max-width: 400px;
   border: 1px solid #333;
   border-radius: 6px;
   background: rgba(255,255,255,0.05);
   color: #fff;
-  font-size: 14px;
+  font-size: 13px;
+  box-sizing: border-box;
 }
 
 #listOfCommands input[type="checkbox"],
