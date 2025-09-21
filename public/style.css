@@ -105,21 +105,23 @@ body {
   margin: 6px 0;
   font-size: 12px;
   cursor: pointer;
-  width: 100%;
+  width: 80%;
   color: #fff;
   gap: 6px; 
+  box-sizing: border-box;
 }
 
-#listOfCommands input[type="checkbox"],
-#listOfCommandsEvent input[type="checkbox"] {
+#listOfCommands label input[type="checkbox"],
+#listOfCommandsEvent label input[type="checkbox"] {
   width: 16px;
   height: 16px;
   accent-color: #00bcd4; 
   margin: 0;
+  flex-shrink: 0; 
 }
 
-#listOfCommands span,
-#listOfCommandsEvent span {
+#listOfCommands label span,
+#listOfCommandsEvent label span {
   flex: 1;
   text-align: left; 
 }
