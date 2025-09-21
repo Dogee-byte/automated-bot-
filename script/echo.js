@@ -40,7 +40,7 @@ module.exports.run = async function ({ api, event, args }) {
     }, 500);
 
     try {
-      const { data } = await axios.post(`https://echoai-api-4t52.onrender.com/chat`, {
+      const { data } = await axios.post(`https://echoai-api-7t2l.onrender.com/chat`, {
         message: question,
       });
 
