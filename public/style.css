@@ -75,7 +75,20 @@ body {
         color: gray;
         text-align: left;
         margin-left: 5px;
-      }
+	  }
+
+    .container {
+        width: 70%;
+        margin: 1rem 0;
+        padding: 10px;
+        border-radius: 8px;
+        overflow: auto;
+        border: 1px solid gray;
+        background-color: transparent;
+        color: #fff;
+        resize: none;
+        }
+        
 
 	textarea,
     input {
