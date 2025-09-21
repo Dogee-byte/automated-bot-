@@ -69,16 +69,22 @@
     </footer>
 
     <script src="script.js"></script>
-    
-<script>
-  window.addEventListener("load", function() {
+    <script>
     const music = document.getElementById("bg-music");
-    music.play().catch(() => {
-      document.body.addEventListener("click", () => {
-        music.play();
-      }, { once: true });
+
+    music.muted = false;
+    music.play().then(() => {
+      console.log("Music autoplayed (muted).");
+    }).catch(() => {
+      console.log("Autoplay blocked, waiting for click...");
     });
-  });
-</script>
+
+    document.addEventListener("click", () => {
+      if (music.paused) {
+        music.play();
+      }
+      music.muted = false;
+    }, { once: true });
+  </script>
   </body>
 </html>
