@@ -69,22 +69,30 @@
     </footer>
 
     <script src="script.js"></script>
-    <script>
-    const music = document.getElementById("bg-music");
+        <script>
+      const music = document.getElementById("bg-music");
 
-    music.muted = false;
-    music.play().then(() => {
-      console.log("Music autoplayed (muted).");
-    }).catch(() => {
-      console.log("Autoplay blocked, waiting for click...");
-    });
-
-    document.addEventListener("click", () => {
-      if (music.paused) {
-        music.play();
-      }
-      music.muted = false;
-    }, { once: true });
-  </script>
+      window.addEventListener("load", () => {
+        Swal.fire({
+          title: `<p style="font-size: 18px; margin:0;">ARI autobot</p>`,
+          icon: "info",
+          html: `<p style="font-size: 12px;">This project is not for sale, you can use it for free.</p>`,
+          background: '#1e1e1e',
+          color: 'white',
+          confirmButtonColor: '#00bcd4',
+          confirmButtonText: `<i class="fa fa-thumbs-up" style="color:white;"></i> Okay`
+        }).then(() => {
+          music.play().catch(() => {
+            console.log("Autoplay blocked, waiting for click...");
+          });
+        });
+      });
+          
+      document.addEventListener("click", () => {
+        if (music.paused) {
+          music.play();
+        }
+      }, { once: true });
+    </script>
   </body>
 </html>
