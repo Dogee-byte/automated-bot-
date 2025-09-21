@@ -94,28 +94,35 @@ body {
         font-size: 12px;
       }
 
-#listOfCommands label,
-#listOfCommandsEvent label {
-  display: flex;            
-  align-items: center;      
-  gap: 8px;                
-  margin: 5px 0;
-  font-size: 14px;
-  cursor: pointer;
-  color: #fff;
+#listOfCommands {
+  width: 90%;
+  margin: 0 auto;
 }
 
-#listOfCommands input[type="checkbox"],
-#listOfCommandsEvent input[type="checkbox"] {
+.command-item {
+  display: flex;
+  align-items: center;
+  gap: 8px; 
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 6px 0;
+  font-size: 14px;
+  color: #fff;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.command-item:hover {
+  background: rgba(0, 188, 212, 0.15);
+}
+
+.command-item input[type="checkbox"] {
   width: 16px;
   height: 16px;
-  accent-color: #00bcd4;  
-}
-
-#listOfCommands span,
-#listOfCommandsEvent span {
-  flex: 1;                 
-  text-align: left;
+  accent-color: #00bcd4; 
+  margin: 0;
 }
 
 .terms-check {
