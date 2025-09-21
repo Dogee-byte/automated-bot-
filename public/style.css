@@ -94,20 +94,32 @@ body {
         font-size: 12px;
       }
 
+#listOfCommands div,
+#listOfCommandsEvent div {
+  display: flex;
+  align-items: center;      
+  gap: 8px;                
+  margin: 6px 0;
+  padding: 8px 12px;
+  border: 1px solid #333;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.05);
+  color: #fff;
+  font-size: 14px;
+}
+
 #listOfCommands input[type="checkbox"],
 #listOfCommandsEvent input[type="checkbox"] {
-  vertical-align: middle;  
-  margin-right: 6px;       
   width: 16px;
   height: 16px;
-  accent-color: #00bcd4;   
+  accent-color: #00bcd4;
+  margin: 0;
 }
 
 #listOfCommands span,
 #listOfCommandsEvent span {
-  vertical-align: middle;  
-  font-size: 14px;
-  color: #fff;
+  flex: 1;
+  text-align: left;
 }
 
 .terms-check {
