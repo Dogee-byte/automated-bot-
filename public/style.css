@@ -94,35 +94,34 @@ body {
         font-size: 12px;
       }
 
-#listOfCommands {
-  width: 90%;
-  margin: 0 auto;
-}
-
-.command-item {
+#listOfCommands label,
+#listOfCommandsEvent label {
   display: flex;
-  align-items: center;
-  gap: 8px; 
+  align-items: center;       
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid #333;
   border-radius: 8px;
-  padding: 8px 12px;
+  padding: 6px 10px;
   margin: 6px 0;
-  font-size: 14px;
-  color: #fff;
+  font-size: 12px;
   cursor: pointer;
-  transition: 0.2s;
+  width: 100%;
+  color: #fff;
+  gap: 6px; 
 }
 
-.command-item:hover {
-  background: rgba(0, 188, 212, 0.15);
-}
-
-.command-item input[type="checkbox"] {
+#listOfCommands input[type="checkbox"],
+#listOfCommandsEvent input[type="checkbox"] {
   width: 16px;
   height: 16px;
   accent-color: #00bcd4; 
   margin: 0;
+}
+
+#listOfCommands span,
+#listOfCommandsEvent span {
+  flex: 1;
+  text-align: left; 
 }
 
 .terms-check {
