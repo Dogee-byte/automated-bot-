@@ -69,6 +69,16 @@
     </footer>
 
     <script src="script.js"></script>
-  
+    
+<script>
+  window.addEventListener("load", function() {
+    const music = document.getElementById("bg-music");
+    music.play().catch(() => {
+      document.body.addEventListener("click", () => {
+        music.play();
+      }, { once: true });
+    });
+  });
+</script>
   </body>
 </html>
