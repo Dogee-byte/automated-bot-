@@ -94,38 +94,20 @@ body {
         font-size: 12px;
       }
 
-/* Container ng bawat command */
-#listOfCommands label,
-#listOfCommandsEvent label {
-  display: flex;
-  align-items: center;       /* align vertically */
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid #333;
-  border-radius: 8px;
-  padding: 6px 10px;
-  margin: 6px 0;
-  font-size: 14px;
-  cursor: pointer;
-  width: 100%;
-  color: #fff;
-  gap: 8px; /* pagitan ng checkbox at text */
-}
-
-/* checkbox mismo */
-#listOfCommands label input[type="checkbox"],
-#listOfCommandsEvent label input[type="checkbox"] {
+#listOfCommands input[type="checkbox"],
+#listOfCommandsEvent input[type="checkbox"] {
+  vertical-align: middle;  
+  margin-right: 6px;       
   width: 16px;
   height: 16px;
-  accent-color: #00bcd4; 
-  margin: 0;
-  flex-shrink: 0; /* para hindi maipit */
+  accent-color: #00bcd4;   
 }
 
-/* text ng commands */
-#listOfCommands label span,
-#listOfCommandsEvent label span {
-  flex: 1;
-  text-align: left; /* text nasa kanan ng checkbox */
+#listOfCommands span,
+#listOfCommandsEvent span {
+  vertical-align: middle;  
+  font-size: 14px;
+  color: #fff;
 }
 
 .terms-check {
