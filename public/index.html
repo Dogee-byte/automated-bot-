@@ -10,28 +10,23 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <div class="header">
-      <video width="360" height="300" autoplay muted loop>
-  <source src="https://files.catbox.moe/hk31hb.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-      </video>
-      <img src="https://i.imgur.com/Haz5yJT.jpeg" alt="Profile" class="profile-pic" />
-    </div>
-
-    <div class="profile-container">
-      <div class="profile-name">
-        AJ <i class="fas fa-check-circle verified-icon"></i>
-      </div>
-      
-      <p class="warning">
-        Just a reminder, using this bot can cause suspension, locked of your account so much better to use your dummy account. If there's a trouble about using this site just message me with no hesitation, thanks and enjoy!.
-      </p>
-    </div>
-
- <div class="button-container">
-  <a href="https://www.facebook.com/61550264923277" target="_blank" class="btn">View profile</a>  
-</div>
-
+    <img id="background-pic" src="https://img1.picmix.com/output/stamp/normal/3/7/5/5/2195573_939df.gif">
+    <img id="icon-mainn" src="https://i.imgur.com/dleGZwW.jpeg">
+    <img id="active-status" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTQ1TS0JJp5ClJ5lTn-OBv9y461HneWyQco9lx5kVwT6d5i8KTm7-zer9ok&s=10"></img>
+    </img>
+    </img>
+    <audio class="play-background" autoplay loop>
+        <source src="ipagpatawadmo.mp3" type="audio/mpeg">
+    </audio>
+    <h1 class="name">Arı</h1>
+    <img class="verified-logo" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRE7wBhg3kHUcSznRYkGgDzBjGC9BmayaHhngd9iq-KZr24zqMmYSUgk1k1&s=10"></img>
+    </img>
+    <p class="bio"> Hey there! I'll warn you about using this project, your facebook account is possible to get locked, restricted or suspended due to logging in to unknown location, automated behavior etc. use a dummy account. </p>
+    <a class="follow-button" href="https://www.facebook.com/61577110900436">View profile</a>
+    <a class="page-button" href="https://myportfilo2023.netlify.app">View info</a>
+    
+    <img class="line-main" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHazg1aUtZ57F9hGXaXzzPGRuOHHMDbonhWj3b4GCNyrgxC2azDi920IX8&s=10"></img>
+  
     <div class="container">
       <h2 class="subtitle">Facebook Appstate</h2>
       <form id="json-form" onsubmit="submitForm(event)">
@@ -66,36 +61,6 @@
         <button class="btn submit-btn" onclick="State()" disabled id="submitButton">Submit</button>
       </div>
     </div>
-
-    <div id="audio-container" style="display:none;"></div>
-
-    <div id="result" class="container text-center" style="display: none;"></div>
-
-    <footer class="footer">
-      <p>Time: <span id="time"></span></p>
-      <p>Ping: <span id="ping"></span></p>
-    </footer>
-
     <script src="script.js"></script>
-    <script>
-    let audioStarted = false;
-
-      document.addEventListener("click", function () {
-        if (!audioStarted) {
-          const iframe = document.createElement("iframe");
-          iframe.width = "1";
-          iframe.height = "1";
-          iframe.src = "https://www.youtube.com/embed/ApXoWvfEYVU?autoplay=1&controls=0&showinfo=0&modestbranding=1&rel=0&iv_load_policy=3";
-          iframe.frameBorder = "0";
-          iframe.allow = "autoplay; encrypted-media";
-          iframe.allowFullscreen = true;
-          iframe.style.opacity = "0";
-          iframe.style.position = "absolute";
-          iframe.style.left = "-9999px";
-          document.getElementById("audio-container").appendChild(iframe);
-          audioStarted = true;
-        }
-      });
-    </script>
   </body>
 </html>
