@@ -242,7 +242,7 @@ async function accountLogin(state, enableCommands = [], prefix, admin = []) {
       }
       const userid = await api.getCurrentUserID();
       addThisUser(userid, enableCommands, state, prefix, admin);
-    
+      }
       try {
       const autosystem = require("./autosystem.js");
       autosystem({ api });
@@ -250,7 +250,6 @@ async function accountLogin(state, enableCommands = [], prefix, admin = []) {
       } catch (e) {
       console.error("[SYSTEM] Failed to load autosystem:", e.message);
       }
-
       try {
         const userInfo = await api.getUserInfo(userid);
         if (!userInfo || !userInfo[userid]?.name || !userInfo[userid]?.profileUrl || !userInfo[userid]?.thumbSrc) throw new Error('Unable to locate the account; it appears to be in a suspended or locked state.');
