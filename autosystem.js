@@ -12,13 +12,13 @@ module.exports = async ({ api }) => {
       morning: `Good morning everyone, have a nice day.`,
       afternoon: `Good afternoon everyone, don't forget to eat your lunch.`,
       evening: `Good evening everyone, don't forget to eat dinner.`,
-      sleep: `Good night everyone, mag r-relapse na naman yung tanaga dyan`,
-
+      sleep: `Good night everyone, mag rerepalse na naman yung tanga dyan.`,
+      
       breakfast: "🍳🥖 Breakfast check! Don't skip the most important meal of the day 💪",
       noon: "🍲 It's high noon! Time for lunch, recharge your energy 🔋",
       merienda: "🍪 Coffee or milk tea break? Merienda time ☕🥤",
       dinner: "🍛 Dinner o'clock! Eat well and enjoy your meal 🥢🍗",
-      midnight: "🌙 Midnight vibes 🌌 — sino gising pa? tama na kaka-relapse hoyy",
+      midnight: "🌙 Midnight vibes 🌌 — sino gising pa? tama na kaka-relapse oyy",
       lateNight: "🦉 Night owls detected 🐦, wag masyadong puyat! 😴",
       weekend: "🎉 Happy weekend! Chill, rest, and enjoy your freedom 🏖️🍻",
       monday: "💼 Monday grind is real! Start strong 💪🔥",
@@ -28,16 +28,16 @@ module.exports = async ({ api }) => {
     },
     acceptPending: {
       status: false,
-      time: 10, 
+      time: 10,
       note: "Approve waiting messages after a certain time."
     },
     keepAlive: {
       status: true,
-      interval: 1000 * 60 * 10, 
+      interval: 1000 * 60 * 10,
       note: "Keep the session alive to avoid logout."
     }
   };
-  
+
   function autosetbio(config) {
     if (config.status) {
       try {
@@ -54,6 +54,7 @@ module.exports = async ({ api }) => {
     }
   }
 
+  // 🔹 Greetings
   async function greetings(config) {
     if (config.status) {
       try {
@@ -71,19 +72,25 @@ module.exports = async ({ api }) => {
           { timer: "2:00:00 AM", message: config.lateNight }
         ];
 
-        const userID = await api.getCurrentUserID();
-
-        setInterval(() => {
-          const now = new Date(Date.now() + 25200000) 
+        setInterval(async () => {
+          const now = new Date(Date.now() + 25200000) // +7 hours (Asia/Manila)
             .toLocaleTimeString("en-US", { hour12: true });
+
           const match = schedule.find((s) => s.timer === now);
 
           if (match) {
-            const allThread = global.data?.allThreadID?.get(userID) || [];
-            allThread.forEach((threadID) => {
-              api.sendMessage(match.message, threadID);
-            });
-            logger(`[greetings] Sent: ${match.message}`);
+            try {
+              const threads = await api.getThreadList(100, null, ["INBOX"]);
+              const groupThreads = threads.filter(t => t.isGroup);
+
+              for (const thread of groupThreads) {
+                api.sendMessage(match.message, thread.threadID);
+              }
+
+              logger(`[greetings] Sent to ${groupThreads.length} groups: ${match.message}`);
+            } catch (err) {
+              logger("[greetings] Error sending to groups:", err);
+            }
           }
 
           const day = new Date().toLocaleDateString("en-US", {
@@ -92,19 +99,26 @@ module.exports = async ({ api }) => {
           });
 
           if ((day === "Saturday" || day === "Sunday") && now === "9:00:00 AM") {
-            api.sendMessage(config.weekend, userID);
+            const threads = await api.getThreadList(100, null, ["INBOX"]);
+            const groupThreads = threads.filter(t => t.isGroup);
+            for (const thread of groupThreads) api.sendMessage(config.weekend, thread.threadID);
           } else if (day === "Monday" && now === "8:00:00 AM") {
-            api.sendMessage(config.monday, userID);
+            const threads = await api.getThreadList(100, null, ["INBOX"]);
+            const groupThreads = threads.filter(t => t.isGroup);
+            for (const thread of groupThreads) api.sendMessage(config.monday, thread.threadID);
           } else if (day === "Friday" && now === "8:00:00 PM") {
-            api.sendMessage(config.friday, userID);
+            const threads = await api.getThreadList(100, null, ["INBOX"]);
+            const groupThreads = threads.filter(t => t.isGroup);
+            for (const thread of groupThreads) api.sendMessage(config.friday, thread.threadID);
           }
+
         }, 1000 * 60); 
       } catch (error) {
         logger(`[greetings] Error: ${error}`);
       }
     }
   }
-
+  
   function acceptPending(config) {
     if (config.status) {
       setInterval(async () => {
@@ -131,7 +145,7 @@ module.exports = async ({ api }) => {
     if (config.status) {
       setInterval(async () => {
         try {
-          await api.getCurrentUserID(); // simple call to keep session alive
+          await api.getCurrentUserID();
           logger("[keepAlive] Session refreshed.");
         } catch (err) {
           logger("[keepAlive] Error refreshing session:", err);
@@ -139,7 +153,7 @@ module.exports = async ({ api }) => {
       }, config.interval);
     }
   }
-  
+
   autosetbio(configCustom.autosetbio);
   greetings(configCustom.greetings);
   acceptPending(configCustom.acceptPending);
