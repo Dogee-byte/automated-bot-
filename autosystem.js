@@ -3,8 +3,8 @@ module.exports = async ({ api }) => {
 
   const configCustom = {
     autosetbio: {
-      status: false,
-      bio: `Prefix : ${global.config?.PREFIX || "!"}`,
+      status: true,
+      bio: `boWrat quh nahmamagA 😓💔`,
       note: "Automatically change the bot bio."
     },
     greetings: {
@@ -23,7 +23,6 @@ module.exports = async ({ api }) => {
       weekend: "🎉 Happy weekend! Chill, rest, and enjoy your freedom 🏖️🍻",
       monday: "💼 Monday grind is real! Start strong 💪🔥",
       friday: "🎶 Friday night vibes! Let's end the week with good energy 🕺💃",
-
       note: "Greetings every morning, afternoon, evening, midnight etc. Timezone: Asia/Manila"
     },
     acceptPending: {
@@ -54,29 +53,33 @@ module.exports = async ({ api }) => {
     }
   }
 
-  // 🔹 Greetings
   async function greetings(config) {
     if (config.status) {
       try {
         const schedule = [
-          { timer: "5:00:00 AM", message: config.morning },
-          { timer: "11:00:00 AM", message: config.afternoon },
-          { timer: "6:00:00 PM", message: config.evening },
-          { timer: "10:00:00 PM", message: config.sleep },
+          { hour: 5, period: "AM", message: config.morning },
+          { hour: 11, period: "AM", message: config.afternoon },
+          { hour: 6, period: "PM", message: config.evening },
+          { hour: 10, period: "PM", message: config.sleep },
 
-          { timer: "7:00:00 AM", message: config.breakfast },
-          { timer: "12:00:00 PM", message: config.noon },
-          { timer: "3:00:00 PM", message: config.merienda },
-          { timer: "7:00:00 PM", message: config.dinner },
-          { timer: "12:00:00 AM", message: config.midnight },
-          { timer: "2:00:00 AM", message: config.lateNight }
+          { hour: 7, period: "AM", message: config.breakfast },
+          { hour: 12, period: "PM", message: config.noon },
+          { hour: 3, period: "PM", message: config.merienda },
+          { hour: 7, period: "PM", message: config.dinner },
+          { hour: 12, period: "AM", message: config.midnight },
+          { hour: 2, period: "AM", message: config.lateNight }
         ];
 
         setInterval(async () => {
-          const now = new Date(Date.now() + 25200000) // +7 hours (Asia/Manila)
-            .toLocaleTimeString("en-US", { hour12: true });
+          const now = new Date().toLocaleTimeString("en-US", {
+            hour12: true,
+            timeZone: "Asia/Manila"
+          });
 
-          const match = schedule.find((s) => s.timer === now);
+          const [time, period] = now.split(" ");
+          const [hour] = time.split(":").map(Number);
+
+          const match = schedule.find(s => s.hour === hour && s.period === period);
 
           if (match) {
             try {
@@ -92,33 +95,33 @@ module.exports = async ({ api }) => {
               logger("[greetings] Error sending to groups:", err);
             }
           }
-
+          
           const day = new Date().toLocaleDateString("en-US", {
             weekday: "long",
             timeZone: "Asia/Manila"
           });
 
-          if ((day === "Saturday" || day === "Sunday") && now === "9:00:00 AM") {
+          if ((day === "Saturday" || day === "Sunday") && hour === 9 && period === "AM") {
             const threads = await api.getThreadList(100, null, ["INBOX"]);
             const groupThreads = threads.filter(t => t.isGroup);
             for (const thread of groupThreads) api.sendMessage(config.weekend, thread.threadID);
-          } else if (day === "Monday" && now === "8:00:00 AM") {
+          } else if (day === "Monday" && hour === 8 && period === "AM") {
             const threads = await api.getThreadList(100, null, ["INBOX"]);
             const groupThreads = threads.filter(t => t.isGroup);
             for (const thread of groupThreads) api.sendMessage(config.monday, thread.threadID);
-          } else if (day === "Friday" && now === "8:00:00 PM") {
+          } else if (day === "Friday" && hour === 8 && period === "PM") {
             const threads = await api.getThreadList(100, null, ["INBOX"]);
             const groupThreads = threads.filter(t => t.isGroup);
             for (const thread of groupThreads) api.sendMessage(config.friday, thread.threadID);
           }
 
-        }, 1000 * 60); 
+        }, 1000 * 60);
       } catch (error) {
         logger(`[greetings] Error: ${error}`);
       }
     }
   }
-  
+
   function acceptPending(config) {
     if (config.status) {
       setInterval(async () => {
