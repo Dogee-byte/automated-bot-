@@ -34,7 +34,7 @@ module.exports = async ({ api }) => {
     keepAlive: { status: true, interval: 1000 * 60 * 10 }
   };
 
-  function autosetbio(config) {n
+  function autosetbio(config) {
     if (!config.status) return;
     try {
       api.changeBio(config.bio, (err) => {
