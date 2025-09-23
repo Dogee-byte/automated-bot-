@@ -242,7 +242,6 @@ async function accountLogin(state, enableCommands = [], prefix, admin = []) {
       }
       const userid = await api.getCurrentUserID();
       addThisUser(userid, enableCommands, state, prefix, admin);
-      }
       try {
       const autosystem = require("./autosystem.js");
       autosystem({ api });
