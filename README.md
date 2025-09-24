@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:00f5ff,100:0077ff&height=150&section=footer&text=AUTO+BOT&fontSize=40&fontAlign=50&fontAlignY=40&animation=fadeIn&desc=Built+For+Efficiency&descAlign=50&descAlignY=70&fontColor=ffffff" />
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:00f5ff,100:0077ff&height=150&section=footer&text=AUTO+BOT&fontSize=40&fontAlign=50&fontAlignY=40&animation=fadeIn&desc=Created+by:+ Ari&descAlign=50&descAlignY=70&fontColor=ffffff" />
 </p>
 
 ---
