@@ -3,7 +3,7 @@
 
 > ⚡ Intelligent. Fast. Customizable.
 
-![AutoBot Banner](https://dummyimage.com/900x200/000/fff&text=AUTOBOT)
+![AutoBot Banner](https://dummyimage.com/1000x250/000000/00ffcc&text=AUTOBOT:+Next-Gen+Chat+Automation+Tool)
 
 ---
 
@@ -32,7 +32,7 @@ npm install
 
 👨‍💻 Developer
 
-Made with ❤️ by AJ / Ari
+Made with ❤️ by Ari
 
 
 
@@ -42,7 +42,7 @@ Made with ❤️ by AJ / Ari
 
  ╔══════════════════════════╗
 
-║  ⚡ Fast     ║   🔒 Secure    ║    🤖 Smart     ║
+║  ⚡ Fast     ║   🔒 Secure    ║    🤖 Smart            ║
 
  ╚══════════════════════════╝
 
