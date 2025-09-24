@@ -3,7 +3,7 @@
 
 > ⚡ Intelligent. Fast. Customizable.
 
-https://dummyimage.com/1000x250/1a2a6c/ffffff&text=AUTOBOT:+Fast+•+Secure+•+Customizable
+![AutoBot Banner](https://dummyimage.com/1000x250/4b6cb7/ffffff&text=AUTOBOT:+Fast+•+Secure+•+Customizable)
 
 ---
 
