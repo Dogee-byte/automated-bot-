@@ -63,14 +63,18 @@ module.exports = async ({ api }) => {
         currentDate = today;
       }
 
-      const match = config.schedule.find(s => {
-        const startTotal = s.start.h * 60 + s.start.m;
-        const endTotal = s.end.h * 60 + s.end.m;
-        const nowTotal = hour * 60 + minute;
-        return nowTotal >= startTotal && nowTotal <= endTotal;
-      });
+     const match = config.schedule.find(s => {
+     const startTotal = s.start.h * 60 + s.start.m;
+     const nowTotal = hour * 60 + minute;
 
-      if (match && !sentToday.has(match.message)) {
+      if (!s.end) {
+      return nowTotal === startTotal;
+    }
+
+    const endTotal = s.end.h * 60 + s.end.m;
+     return nowTotal >= startTotal && nowTotal <= endTotal;
+    });
+    if (match && !sentToday.has(match.message)) {
         try {
           const threads = await api.getThreadList(100, null, ["INBOX"]);
           const groupThreads = threads.filter(t => t.isGroup);
