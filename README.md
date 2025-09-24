@@ -1,59 +1,70 @@
 
-# 🚀 AUTOBOT
-*
-    █████╗     ██████╗     ██╗                
-   ██╔══██╗.   ██╔══██╗    ██║                
-   ███████║.   ██████╔╝    ██║                
-   ██╔══██║.   ██╔══██╗    ██║                
-   ██║  ██║.   ██║  ██║     ██║                 
-   ╚═╝  ╚═╝.  ╚═╝   ╚═╝     ╚═╝                 
-                                         
- 🤖  A U T O B O T  🤖                           
-                                         
+# ⌬ AUTO𝘽𝙊𝙏 ⌬
+
+> ⚡ Intelligent. Fast. Customizable.
+
+███████╗██╗   ██╗████████╗ ██████╗ ██████╗  █████╗ ████████╗ ██╔════╝██║   ██║╚══██╔══╝██╔═══██╗██╔══██╗██╔══██╗╚══██╔══╝ █████╗  ██║   ██║   ██║   ██║   ██║██████╔╝███████║   ██║
+██╔══╝  ██║   ██║   ██║   ██║   ██║██╔═══╝ ██╔══██║   ██║
+██║     ╚██████╔╝   ██║   ╚██████╔╝██║     ██║  ██║   ██║
+╚═╝      ╚═════╝    ╚═╝    ╚═════╝ ╚═╝     ╚═╝  ╚═╝   ╚═╝
 
 
+---
+
+### 2. **Minimal & Clean**
+
+# 🤖 AutoBot
+
+A powerful and flexible chatbot framework.  
+Built for speed, security, and customization.
+
+---
 
 ## ✨ Features
-- ⚡ **Lightning-fast automation**
-- 🧠 **Smart command system**
-- 📡 **API-ready integrations**
-- ⏰ **Uptime monitor**
-- 🔒 **Error-safe & optimized**
+- ⚡ Fast and lightweight  
+- 🔒 Secure and reliable  
+- 🛠️ Easy to customize  
+- 🌐 API integrations  
 
+---
 
-## 🚀 Installation
-https://github.com/mojin3348/automated-bot-.git
+## 📦 Installation
 
 cd autobot
-
 npm install
 
-npm start
 
-
-
-🛠 Usage
-
-Add your commands inside /commands
-
-Configure API keys in config.js
-
-Restart AutoBot to apply changes
-
-
+---
 
 👨‍💻 Developer
 
-Built with ❤️ by ARI
+Made with ❤️ by AJ / Ari
+
+👉 bagay kung gusto mo ng **malinis at pro-looking** design.
 
 
 
-📜 License
+# 🌌 AUTO𝘽𝙊𝙏
 
-MIT License – free to use, modify, and share.
+> 🚀 Next-Gen Chat Automation Tool
 
-> ⚡ AutoBot is built for developers, dreamers, and doers.
-Keep automating. Keep evolving. 🚀
+╔══════════════════════════╗
+║  ⚡ Fast   🔒 Secure   🤖 Smart ║
+╚══════════════════════════╝
+
+### 🌟 Highlights
+- ✨ Auto response system
+- ⚙️ Custom command handler
+- 📡 API-ready integration
+- 🎨 Aesthetic canvas support
+
+---
+
+### 🛠 Installation
+
+npm install autobot
 
 
+---
 
+👑 Developer: AJ / Ari
