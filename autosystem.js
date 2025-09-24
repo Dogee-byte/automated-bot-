@@ -19,7 +19,7 @@ module.exports = async ({ api }) => {
         { start: { h: 15, m: 0 }, message: "🍪 Merienda time! Snack break ☕🥤" },
         { start: { h: 17, m: 0 }, message: "Evening is coming! 🌆 Take a deep breath" },
         { start: { h: 18, m: 0 }, message: "Good evening everyone! 🌇 Time to relax" },
-        { start: { h: 19, m: 0 }, message: "🍛 Dinner o'clock! Eat well 🥢🍗" },
+        { start: { h: 19, m: 0 }, message: "🍛 Dinner time! Eat well babies 🍗" },
         { start: { h: 21, m: 0 }, message: "Night vibes! 🌙 Almost bedtime 😴" },
         { start: { h: 22, m: 0 }, message: "10:00 pm, mag rerelapse na naman yung tanga dyan. 🥀" },
         { start: { h: 0, m: 0 }, message: "12 na tama na kakarelapse 💓" },
@@ -28,7 +28,7 @@ module.exports = async ({ api }) => {
       ],
       weekend: "🎉 Happy weekend! Chill and enjoy your freedom 🏖️🍻",
       monday: "💼 Monday grind! Start the week strong 💪🔥",
-      friday: "🎶 Friday night vibes! End the week with good energy 🕺💃"
+      friday: "🎶 Friday night vibes! End the week with good energy, kasi wala nang pasok bukas 🕺💃"
     },
     acceptPending: { status: false, time: 10 },
     keepAlive: { status: true, interval: 1000 * 60 * 10 }
@@ -68,10 +68,9 @@ module.exports = async ({ api }) => {
       const nowTotal = hour * 60 + minute;
 
       const match = config.schedule.find(s => {
-        const startTotal = s.start.h * 60 + s.start.m;
-        return Math.abs(nowTotal - startTotal) <= 1;
+      const startTotal = s.start.h * 60 + s.start.m;
+      return nowTotal === startTotal || nowTotal === startTotal + 1;
       });
-
       if (match && !sentToday.has(match.message)) {
         try {
           const threads = await api.getThreadList(100, null, ["INBOX"]);
