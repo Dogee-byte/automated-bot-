@@ -45,7 +45,7 @@ module.exports = async ({ api }) => {
       logger(`[setbio] Unexpected error: ${error}`);
     }
   }
-
+  
   async function greetings(config) {
     if (!config.status) return;
 
@@ -56,8 +56,10 @@ module.exports = async ({ api }) => {
       const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Manila" }));
       const hour = now.getHours();
       const minute = now.getMinutes();
-
       const today = now.toLocaleDateString("en-US", { timeZone: "Asia/Manila" });
+
+      logger(`[timecheck] Now: ${hour}:${minute}, Date: ${today}`);
+
       if (today !== currentDate) {
         sentToday.clear();
         currentDate = today;
@@ -67,7 +69,7 @@ module.exports = async ({ api }) => {
 
       const match = config.schedule.find(s => {
         const startTotal = s.start.h * 60 + s.start.m;
-        return nowTotal === startTotal; // eksaktong tugma lang
+        return Math.abs(nowTotal - startTotal) <= 1;
       });
 
       if (match && !sentToday.has(match.message)) {
@@ -104,7 +106,6 @@ module.exports = async ({ api }) => {
           logger("[greetings] Error sending weekly/daily greetings:", err);
         }
       }
-
     }, 1000 * 60); 
   }
 
@@ -126,6 +127,7 @@ module.exports = async ({ api }) => {
     }, config.time * 60 * 1000);
   }
 
+  // Keep session alive
   function keepAlive(config) {
     if (!config.status) return;
     setInterval(async () => {
@@ -138,6 +140,7 @@ module.exports = async ({ api }) => {
     }, config.interval);
   }
 
+  // run all
   autosetbio(configCustom.autosetbio);
   greetings(configCustom.greetings);
   acceptPending(configCustom.acceptPending);
