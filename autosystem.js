@@ -9,22 +9,22 @@ module.exports = async ({ api }) => {
     greetings: {
       status: true,
       schedule: [
-        { start: { h: 5, m: 0 }, end: { h: 5, m: 30 }, message: "Good morning everyone! Rise and shine ☀️" },
-        { start: { h: 6, m: 0 }, end: { h: 6, m: 30 }, message: "Time for morning stretches! 🧘‍♂️" },
-        { start: { h: 7, m: 0 }, end: { h: 7, m: 30 }, message: "🍳🥖 Breakfast time! Don't skip it 💪" },
-        { start: { h: 9, m: 0 }, end: { h: 9, m: 30 }, message: "Keep hustling! 💼 Productivity vibes!" },
-        { start: { h: 11, m: 0 }, end: { h: 11, m: 30 }, message: "Good late morning! Almost lunch 🍲" },
-        { start: { h: 12, m: 0 }, end: { h: 12, m: 30 }, message: "🍲 Lunch time! Refuel your energy 🔋" },
-        { start: { h: 14, m: 0 }, end: { h: 14, m: 30 }, message: "Afternoon vibes! Stay hydrated 💧" },
-        { start: { h: 15, m: 0 }, end: { h: 15, m: 30 }, message: "🍪 Merienda time! Snack break ☕🥤" },
-        { start: { h: 17, m: 0 }, end: { h: 17, m: 30 }, message: "Evening is coming! 🌆 Take a deep breath" },
-        { start: { h: 18, m: 0 }, end: { h: 18, m: 30 }, message: "Good evening everyone! 🌇 Time to relax" },
-        { start: { h: 19, m: 0 }, end: { h: 19, m: 30 }, message: "🍛 Dinner o'clock! Eat well 🥢🍗" },
-        { start: { h: 21, m: 0 }, end: { h: 21, m: 30 }, message: "Night vibes! 🌙 Almost bedtime 😴" },
+        { start: { h: 5, m: 0 }, message: "Good morning everyone! Rise and shine ☀️" },
+        { start: { h: 6, m: 0 }, message: "Time for morning stretches! 🧘‍♂️" },
+        { start: { h: 7, m: 0 }, message: "🍳🥖 Breakfast time! Don't skip it 💪" },
+        { start: { h: 9, m: 0 }, message: "Keep hustling! 💼 Productivity vibes!" },
+        { start: { h: 11, m: 0 }, message: "Good late morning! Almost lunch 🍲" },
+        { start: { h: 12, m: 0 }, message: "🍲 Lunch time! Refuel your energy 🔋" },
+        { start: { h: 14, m: 0 }, message: "Afternoon vibes! Stay hydrated 💧" },
+        { start: { h: 15, m: 0 }, message: "🍪 Merienda time! Snack break ☕🥤" },
+        { start: { h: 17, m: 0 }, message: "Evening is coming! 🌆 Take a deep breath" },
+        { start: { h: 18, m: 0 }, message: "Good evening everyone! 🌇 Time to relax" },
+        { start: { h: 19, m: 0 }, message: "🍛 Dinner o'clock! Eat well 🥢🍗" },
+        { start: { h: 21, m: 0 }, message: "Night vibes! 🌙 Almost bedtime 😴" },
         { start: { h: 22, m: 0 }, message: "10:00 pm, mag rerelapse na naman yung tanga dyan. 🥀" },
         { start: { h: 0, m: 0 }, message: "12 na tama na kakarelapse 💓" },
-        { start: { h: 2, m: 0 }, end: { h: 2, m: 30 }, message: "Late night alert! 🦉 Don't stay up too long" },
-        { start: { h: 4, m: 0 }, end: { h: 4, m: 30 }, message: "Sunrise is comming 😍🌄" }
+        { start: { h: 2, m: 0 }, message: "Late night alert! 🦉 Don't stay up too long" },
+        { start: { h: 4, m: 0 }, message: "Sunrise is comming 😍🌄" }
       ],
       weekend: "🎉 Happy weekend! Chill and enjoy your freedom 🏖️🍻",
       monday: "💼 Monday grind! Start the week strong 💪🔥",
@@ -63,18 +63,14 @@ module.exports = async ({ api }) => {
         currentDate = today;
       }
 
-     const match = config.schedule.find(s => {
-     const startTotal = s.start.h * 60 + s.start.m;
-     const nowTotal = hour * 60 + minute;
+      const nowTotal = hour * 60 + minute;
 
-      if (!s.end) {
-      return nowTotal === startTotal;
-    }
+      const match = config.schedule.find(s => {
+        const startTotal = s.start.h * 60 + s.start.m;
+        return nowTotal === startTotal; // eksaktong tugma lang
+      });
 
-    const endTotal = s.end.h * 60 + s.end.m;
-     return nowTotal >= startTotal && nowTotal <= endTotal;
-    });
-    if (match && !sentToday.has(match.message)) {
+      if (match && !sentToday.has(match.message)) {
         try {
           const threads = await api.getThreadList(100, null, ["INBOX"]);
           const groupThreads = threads.filter(t => t.isGroup);
@@ -93,6 +89,7 @@ module.exports = async ({ api }) => {
         try {
           const threads = await api.getThreadList(100, null, ["INBOX"]);
           const groupThreads = threads.filter(t => t.isGroup);
+
           if ((weekday === "Saturday" || weekday === "Sunday") && hour === 9) {
             for (const thread of groupThreads) api.sendMessage(config.weekend, thread.threadID);
             sentToday.add(`day-${weekday}-${hour}`);
@@ -128,7 +125,7 @@ module.exports = async ({ api }) => {
       }
     }, config.time * 60 * 1000);
   }
-  
+
   function keepAlive(config) {
     if (!config.status) return;
     setInterval(async () => {
