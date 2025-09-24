@@ -3,7 +3,7 @@
 
 > ⚡ Intelligent. Fast. Customizable.
 
-![AutoBot Banner](https://dummyimage.com/1000x250/000000/00ffcc&text=AUTOBOT:+Next-Gen+Chat+Automation+Tool)
+![AutoBot Banner](https://dummyimage.com/1000x250/4b6cb7/ffffff&text=AUTOBOT:+Fast+•+Secure+•+Customizable)
 
 ---
 
