@@ -3,6 +3,8 @@
 
 > ⚡ Intelligent. Fast. Customizable.
 
+![AutoBot Banner](https://dummyimage.com/900x200/000/fff&text=AUTOBOT)
+
 ---
 
 # 🤖 AutoBot
@@ -32,8 +34,6 @@ npm install
 
 Made with ❤️ by AJ / Ari
 
-👉 bagay kung gusto mo ng **malinis at pro-looking** design.
-
 
 
 # 🌌 AUTO𝘽𝙊𝙏
@@ -42,7 +42,7 @@ Made with ❤️ by AJ / Ari
 
  ╔══════════════════════════╗
 
-║  ⚡ Fast   🔒 Secure   🤖 Smart ║
+║  ⚡ Fast     ║   🔒 Secure    ║    🤖 Smart     ║
 
  ╚══════════════════════════╝
 
