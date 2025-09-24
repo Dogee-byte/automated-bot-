@@ -38,8 +38,6 @@ Made with ❤️ by AJ / Ari
 
 # 🌌 AUTO𝘽𝙊𝙏
 
-> 🚀 Next-Gen Chat Automation Tool
-
 
 
 ╔══════════════════════════╗
