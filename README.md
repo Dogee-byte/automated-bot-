@@ -1,60 +1,48 @@
-<h1 align="center">🦅 AUTOBOT🦅</h1>
+ <h1 align="center">🤖 AutoBot</h1>
 
 <p align="center">
-  <img src="https://media1.giphy.com/media/v1.Y2lkPTZjMDliOTUyNHVkdnlnNGV5MWF6b3FsdGM4MnJyaGloZm84bTVldGhkM29lNTNhcSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/6wdZAQm2unplu/giphy.gif" alt="AUTOBOT-VRN" width="400" style="border-radius: 12px; box-shadow: 0 0 20px #00f2ff;">
+  <img src="https://i.ibb.co/FHn4LmV/autobot-banner.png" alt="AutoBot Banner" width="600"/>
 </p>
 
 <p align="center">
-  <b>The ultimate Facebook Messenger bot framework built with <code>ws3-fca</code> for lightning-fast, modular automation.</b><br/>
-  Designed for power users, admins, and developers who want control, speed, and customization.
-</p>
-
-<p align="center">
-  <a href="https://github.com/vernesg/autobot-vrn/stargazers">
-    <img src="https://img.shields.io/github/stars/vernesg/autobot-vrn?style=for-the-badge" alt="Stars">
-  </a>
-  <a href="https://github.com/vernesg/autobot-vrn/fork">
-    <img src="https://img.shields.io/github/forks/vernesg/autobot-vrn?style=for-the-badge" alt="Forks">
-  </a>
-  <a href="https://github.com/vernesg/autobot-vrn/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/vernesg/autobot-vrn?style=for-the-badge" alt="License">
-  </a>
+  <b>Next-level Facebook Messenger Automation Bot 🚀</b><br>
+  <i>Auto greetings, auto bio, session keep-alive, and more — fully customizable.</i>
 </p>
 
 ---
 
-### 🚀 Live Bot Access
-
-💡 Experience the bot instantly:  
-🌐 **[Launch AUTOBOT on Render](https://automated-bot-f15b.onrender.com/)**
-
-> ⚠️ *Note: This is free to use just click the website above.*
-
----
-
-### ✨ Features
-
-- 🔐 **Login via Facebook cookies** — no need for email/password  
-- 🧩 **Modular Command System** — easily extend with custom `/modules/`  
-- 🧠 **Auto-replies & Smart Responses** — fully customizable  
-- 🎲 **Mini-Games & Spam Utilities** — interact and play  
-- 👑 **Admin Commands** — protect your bot with role-based actions   
-- 🧾 **Local JSON Database** — config, cache, state — all saved  
-- ⏱ **Scheduled Messages & Responses** — automate at intervals  
-- 📎 **Media Support** — images, GIFs, attachments via command  
-- 🎛 **Hot-Reload Support** — update modules without restart  
+<p align="center">
+  <img src="https://img.shields.io/badge/Node.js-18+-green?logo=node.js"/>
+  <img src="https://img.shields.io/badge/Messenger-Bot-blue?logo=messenger"/>
+  <img src="https://img.shields.io/badge/License-MIT-yellow"/>
+  <img src="https://img.shields.io/badge/Status-Active-success"/>
+</p>
 
 ---
 
-### 📦 Installation
+## ✨ Features
 
-```bash
-# Clone the repo
-git clone https://github.com/vernesg/autobot-vrn.git
-cd autobot-vrn
+- 📝 **Auto Bio** → Changes your Messenger bio automatically  
+- ⏰ **Scheduled Greetings** → Sends greetings at exact times (Morning, Night, etc.)  
+- 📅 **Special Days** → Unique greetings every **Monday, Friday, Weekend**  
+- 📩 **Auto Accept Pending** → Automatically accepts pending requests  
+- 🔄 **Keep Alive** → Refreshes session to prevent auto-logout  
+- ⚡ **Lightweight** → Built with `facebook-chat-api` + Node.js  
+- 🎨 **Canvas Commands** → Generate cool images with `node-canvas`  
 
-# Install dependencies
-npm install
+---
 
-# Add your Facebook cookie in the config
-nano config.json
+## 🖼️ Preview (Canvas Example)
+
+<p align="center">
+  <img src="https://i.ibb.co/DbnK2sN/autobot-canvas.png" alt="AutoBot Canvas Example" width="400"/>
+</p>
+
+---
+
+## 🚀 Installation
+
+1. **Clone the repo**
+   ```bash
+   git clone https://github.com/your-username/autobot.git
+   cd autobot
